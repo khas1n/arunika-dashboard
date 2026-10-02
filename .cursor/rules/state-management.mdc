@@ -1,0 +1,23 @@
+---
+description: When to use Query, the URL, TanStack Form, useState, or Zustand
+globs: src/**/*.ts,src/**/*.tsx
+alwaysApply: false
+---
+
+# State management
+
+Pick the narrowest tool:
+
+- Server data: TanStack Query, with `queryOptions` in the feature's `api/` folder.
+- Bookmarkable state (filters, pagination): URL search params via `validateSearch`.
+- Form state: TanStack Form.
+- State used by one component: `useState`.
+- Client state shared across distant components: Zustand.
+
+One Zustand store per concern, in `src/stores/` when shared or `features/<name>/stores/` when one feature owns it. Name the file `<name>-store.ts` and the hook `use<Name>Store`. Type it with `create<State>()(...)` and keep actions inside the store. Read with a single-value selector or `useShallow`; never subscribe to the whole store. Use `persist` only for user preferences, with a unique `name` and a `version`.
+
+```ts
+const theme = usePreferencesStore((state) => state.theme)
+```
+
+Never store server data, the session, or secrets in Zustand. A store is a module singleton shared across requests on the server, so do not touch stores in `beforeLoad`, `loader`, or server code.

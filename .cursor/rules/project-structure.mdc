@@ -1,0 +1,29 @@
+---
+description: Feature folders, one-way imports, and the server/client file boundary
+alwaysApply: true
+---
+
+# Project structure
+
+```
+src/routes/            thin: guards, loaders, head, compose features
+src/features/<name>/   api/ components/ hooks/ schemas/ stores/
+src/components/ui/     shadcn primitives (flat files)
+src/components/layout/ app shell
+src/components/shared/ used by two or more features
+src/stores/            shared Zustand stores
+src/hooks/ src/lib/ src/config/ src/helpers/ src/context/
+```
+
+Put code in the smallest scope that uses it: one component's folder, else its feature, else a shared folder. Imports flow one way: routes → features → shared. A feature never imports another feature or `src/routes`. Import with the `#/` alias.
+
+A component folder re-exports from `index.ts`, so the import is the folder (`#/components/layout/app-header`). Do not add barrels for `api`, `hooks`, `schemas`, routes, or the flat files in `src/components/ui`.
+
+Files are kebab-case, components PascalCase, exports named. Server-only code is `*.server.ts` (DB, secrets). `createServerFn` wrappers are `*.functions.ts` and are safe to import anywhere. Shared types and Zod schemas stay in plain `.ts` files.
+
+```ts
+// ❌ a route file that queries Prisma itself
+// ✅ src/features/orders/api/orders.functions.ts calls orders.server.ts
+```
+
+New feature: `src/features/<name>/`, a route under `src/routes/_authenticated/`, a server function with `authMiddleware` when it reads private data, and a story next to every component.

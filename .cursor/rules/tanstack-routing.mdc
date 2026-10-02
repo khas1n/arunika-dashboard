@@ -1,0 +1,24 @@
+---
+description: TanStack Start file routes, SPA rendering, and auth guards
+globs: src/routes/**,src/router.tsx
+alwaysApply: false
+---
+
+# TanStack Start routing
+
+Routes are files in `src/routes` using `createFileRoute`. Never edit `routeTree.gen.ts`. The app router is `getRouter()` in `src/router.tsx`; the Vite plugin is `tanstackStart()`.
+
+Rendering policy: pages are client-only. `src/start.ts` sets `defaultSsr: false`, and only `__root`, `_guest`, and `_authenticated` set `ssr: 'data-only'` so the session check and its redirect run on the server. Do not set `ssr: true` on a page; a child cannot be less restrictive than its parent.
+
+```tsx
+export const Route = createFileRoute('/_authenticated/orders')({
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData(ordersQueryOptions()),
+  pendingComponent: OrdersSkeleton,
+  component: OrdersPage,
+})
+```
+
+Navigate with `<Link>` or `useNavigate`, never `<a href>` for internal links. Validate search params with Zod and read them with `Route.useSearch()`. Auth checks belong in `beforeLoad` on the layout route, not inside components. Protected data goes through a server function with `authMiddleware`; components call it with `useServerFn` so an auth redirect is followed.
+
+Set `preload` on links and keep `defaultPreload: 'intent'`. Give routes an `errorComponent` and a skeleton `pendingComponent`.

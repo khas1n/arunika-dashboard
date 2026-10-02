@@ -1,0 +1,60 @@
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-arunika}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-arunika}
+      POSTGRES_DB: ${POSTGRES_DB:-arunika}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - arunika-db:/var/lib/postgresql
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${POSTGRES_USER:-arunika} -d ${POSTGRES_DB:-arunika}',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    profiles: [app]
+    build:
+      context: .
+      target: build
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-arunika}:${POSTGRES_PASSWORD:-arunika}@db:5432/${POSTGRES_DB:-arunika}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL}
+      SEED_ADMIN_NAME: ${SEED_ADMIN_NAME:-Administrator}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@arunika.local}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+    command: pnpm db:deploy
+    restart: 'no'
+
+  app:
+    profiles: [app]
+    build:
+      context: .
+      target: runtime
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-arunika}:${POSTGRES_PASSWORD:-arunika}@db:5432/${POSTGRES_DB:-arunika}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - '${APP_PORT:-3000}:3000'
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  arunika-db:

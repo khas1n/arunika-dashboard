@@ -1,0 +1,18 @@
+---
+description: React Compiler, data loading, and bundle boundaries
+globs: src/**/*.ts,src/**/*.tsx
+alwaysApply: false
+---
+
+# Performance
+
+React Compiler is enabled, so do not add `useMemo`, `useCallback`, or `memo` by default, and do not fetch data inside `useEffect`.
+
+Load route data in `loader` with `ensureQueryData` and a `queryOptions` factory. Run independent requests with `Promise.all`. Keep `staleTime` above 0 so client navigations reuse cached data. Loaders run in the browser, so every data route gets a skeleton `pendingComponent`.
+
+```tsx
+loader: ({ context }) =>
+  context.queryClient.ensureQueryData(ordersQueryOptions()),
+```
+
+Prisma queries `select` only the fields the UI renders. Lazy-load heavy UI with `React.lazy`, and virtualize lists that can grow past a screen. Keep `*.server.ts` imports inside server function handlers so they stay out of the client bundle. Give images explicit `width` and `height`.

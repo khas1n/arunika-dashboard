@@ -1,0 +1,21 @@
+---
+description: Tailwind utilities, theme tokens, and shadcn primitives
+alwaysApply: true
+---
+
+# Tailwind styling
+
+Style with Tailwind utilities. No `style={{}}`, no new `.css` files, no arbitrary values (`bg-[#fff]`, `px-[13px]`, `text-[var(--sea-ink)]`). Use theme tokens (`bg-background`, `text-muted-foreground`, `border-border`) defined in `src/styles.css`.
+
+Merge classes with `cn()` from `#/lib/utils`. Define variants with `cva`. Never build class names dynamically (`bg-${color}`); the names must appear as complete strings so Tailwind can see them.
+
+Reach for a shadcn primitive before writing a custom one. Add it with:
+
+```bash
+pnpm dlx shadcn@latest add button
+```
+
+```tsx
+// ❌ <div style={{ padding: 13 }} className="bg-[#f6f6f6]" />
+// ✅ <div className="bg-muted p-3" />
+```

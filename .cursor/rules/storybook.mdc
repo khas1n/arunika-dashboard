@@ -1,0 +1,22 @@
+---
+description: Every component ships with a colocated Storybook story
+alwaysApply: true
+---
+
+# Storybook
+
+Every component under `src/components/**` and `src/features/*/components/**` has a sibling `*.stories.tsx`. shadcn primitives in `src/components/ui` included.
+
+Write CSF3 stories: `satisfies Meta<typeof Component>`, `tags: ['autodocs']`, a `title` that follows the folder path (`Layout/UserMenu`), and one story per meaningful state. Use `fn()` for callbacks and a `play` function for interactions.
+
+```tsx
+const meta = {
+  title: 'Auth/LoginForm',
+  component: LoginForm,
+  tags: ['autodocs'],
+} satisfies Meta<typeof LoginForm>
+```
+
+`@storybook/tanstack-react` wraps every story in a router and mocks `createServerFn`, so do not add a `RouterProvider`. A `*.server.ts` module that a story reaches gets a `__mocks__` file registered with `sb.mock` in `.storybook/preview.tsx`. Reset any Zustand store the story touches in `beforeEach` with `useXStore.setState(...)`.
+
+Share Storybook links with `&full=true` appended.
