@@ -17,23 +17,9 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from '#/components/ui/input-group'
+import { toFieldErrors } from '#/lib/form-errors'
 import { loginSchema } from '#/features/auth/schemas/login'
 import type { LoginValues } from '#/features/auth/schemas/login'
-
-function toFieldErrors(errors: ReadonlyArray<unknown>) {
-  return errors.flatMap((error) => {
-    if (typeof error === 'string') return [{ message: error }]
-    if (
-      error &&
-      typeof error === 'object' &&
-      'message' in error &&
-      typeof error.message === 'string'
-    ) {
-      return [{ message: error.message }]
-    }
-    return []
-  })
-}
 
 export function LoginForm({
   onSubmit,

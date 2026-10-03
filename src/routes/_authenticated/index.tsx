@@ -1,14 +1,21 @@
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { dashboardSummaryQueryOptions } from '#/features/dashboard/api/dashboard.queries'
 import {
   DashboardPending,
   SummaryCards,
 } from '#/features/dashboard/components/summary-cards'
+import { feedsQueryOptions } from '#/features/pakan/api/feed.queries'
+import { FeedManager } from '#/features/pakan/components/feed-manager'
+import { useFeedActions } from '#/features/pakan/hooks/use-feed-actions'
 
 export const Route = createFileRoute('/_authenticated/')({
   ssr: false,
   loader: ({ context }) =>
-    context.queryClient.ensureQueryData(dashboardSummaryQueryOptions()),
+    Promise.all([
+      context.queryClient.ensureQueryData(dashboardSummaryQueryOptions()),
+      context.queryClient.ensureQueryData(feedsQueryOptions()),
+    ]).then(([summary]) => summary),
   pendingComponent: DashboardPending,
   head: () => ({
     meta: [{ title: 'Beranda | Arunika' }],
@@ -19,6 +26,8 @@ export const Route = createFileRoute('/_authenticated/')({
 function DashboardPage() {
   const { session } = Route.useRouteContext()
   const summary = Route.useLoaderData()
+  const { data: feeds } = useSuspenseQuery(feedsQueryOptions())
+  const { createFeed, updateFeed, deleteFeed } = useFeedActions()
 
   return (
     <section className="grid gap-6">
@@ -33,6 +42,12 @@ function DashboardPage() {
       <SummaryCards
         userCount={summary.userCount}
         sessionCount={summary.sessionCount}
+      />
+      <FeedManager
+        feeds={feeds}
+        onCreate={createFeed}
+        onUpdate={updateFeed}
+        onDelete={deleteFeed}
       />
     </section>
   )
