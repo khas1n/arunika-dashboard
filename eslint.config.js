@@ -45,6 +45,11 @@ export default [
               except: ['./src/features/dashboard'],
             },
             {
+              target: './src/features/pakan',
+              from: './src/features',
+              except: ['./src/features/pakan'],
+            },
+            {
               target: './src/features/profile',
               from: './src/features',
               except: ['./src/features/profile'],

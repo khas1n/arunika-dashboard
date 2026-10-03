@@ -19,6 +19,16 @@ model User {
   sessions      Session[]
   accounts      Account[]
 
+  feedReceipts       FeedReceipt[]
+  feedApplications   FeedApplication[]
+  stockOpnames       StockOpname[]
+  treatmentLogs      TreatmentLog[]
+  mortalityEvents    MortalityEvent[]
+  pondStockings      PondStocking[]
+  fastingOverrides   FastingOverride[] @relation("FastingOverrideCreatedBy")
+  fastingRevocations FastingOverride[] @relation("FastingOverrideRevokedBy")
+  bibisRecords       BibisRecord[]
+
   @@map("user")
 }
 
@@ -68,4 +78,348 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+model Batch {
+  id                     String   @id @default(cuid())
+  name                   String   @unique
+  molassesCarbonFraction Decimal  @default(0.37) @db.Decimal(6, 4)
+  plannedSeedWeightGrams Decimal? @db.Decimal(10, 4)
+  bibisLeadDays          Int      @default(2)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  batchPonds   BatchPond[]
+  feedReceipts FeedReceipt[]
+
+  @@map("batch")
+}
+
+model Pond {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  batchPonds BatchPond[]
+
+  @@map("pond")
+}
+
+model Feed {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  batchPonds       BatchPond[]
+  feedReceipts     FeedReceipt[]
+  feedApplications FeedApplication[]
+  stockOpnames     StockOpname[]
+  bibisRecords     BibisRecord[]
+
+  @@map("feed")
+}
+
+model SeedSource {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pondStockings PondStocking[]
+
+  @@map("seed_source")
+}
+
+model Treatment {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  treatmentLogs       TreatmentLog[]
+  batchPondTreatments BatchPondTreatment[]
+
+  @@map("treatment")
+}
+
+model FeedingRateBand {
+  id             String   @id @default(cuid())
+  minWeightGrams Decimal  @unique @db.Decimal(10, 3)
+  maxWeightGrams Decimal  @db.Decimal(10, 3)
+  frMin          Decimal  @db.Decimal(6, 4)
+  frMax          Decimal  @db.Decimal(6, 4)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("feeding_rate_band")
+}
+
+model FeedAdditive {
+  id               String   @id @default(cuid())
+  name             String   @unique
+  gramsPerFeedGram Decimal  @db.Decimal(10, 6)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("feed_additive")
+}
+
+model BatchPond {
+  id                  String   @id @default(cuid())
+  batchId             String
+  pondId              String
+  feedId              String?
+  plannedSeedCount    Int?
+  volumeM3            Decimal? @db.Decimal(8, 2)
+  plannedFeedDayCount Int?
+  plannedFastDayCount Int?
+  densityPerM3        Decimal? @db.Decimal(8, 2)
+  aeratorType         String?
+  probiotic           String?
+  proteinFraction     Decimal? @db.Decimal(6, 4)
+  carbonFraction      Decimal? @db.Decimal(6, 4)
+  nitrogenFraction    Decimal? @db.Decimal(6, 4)
+  notes               String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  batch Batch @relation(fields: [batchId], references: [id])
+  pond  Pond  @relation(fields: [pondId], references: [id])
+  feed  Feed? @relation(fields: [feedId], references: [id])
+
+  treatments       BatchPondTreatment[]
+  fastingPatterns  PondFastingPattern[]
+  fastingOverrides FastingOverride[]
+  bibisRecords     BibisRecord[]
+  dailyRecords     PondDailyRecord[]
+  stockings        PondStocking[]
+  mortalityEvents  MortalityEvent[]
+  feedApplications FeedApplication[]
+  treatmentLogs    TreatmentLog[]
+
+  @@unique([batchId, pondId])
+  @@index([pondId])
+  @@index([feedId])
+  @@map("batch_pond")
+}
+
+model BatchPondTreatment {
+  id          String   @id @default(cuid())
+  batchPondId String
+  treatmentId String
+  createdAt   DateTime @default(now())
+
+  batchPond BatchPond @relation(fields: [batchPondId], references: [id], onDelete: Cascade)
+  treatment Treatment @relation(fields: [treatmentId], references: [id])
+
+  @@unique([batchPondId, treatmentId])
+  @@index([treatmentId])
+  @@map("batch_pond_treatment")
+}
+
+model PondFastingPattern {
+  id            String   @id @default(cuid())
+  batchPondId   String
+  feedDayCount  Int
+  fastDayCount  Int
+  anchorOn      DateTime @db.Date
+  effectiveFrom DateTime @db.Date
+  createdAt     DateTime @default(now())
+
+  batchPond BatchPond @relation(fields: [batchPondId], references: [id])
+
+  @@unique([batchPondId, effectiveFrom])
+  @@map("pond_fasting_pattern")
+}
+
+model FastingOverride {
+  id          String    @id @default(cuid())
+  batchPondId String
+  startsAt    DateTime
+  endsAt      DateTime
+  reason      String
+  note        String?
+  userId      String
+  createdAt   DateTime  @default(now())
+  revokedAt   DateTime?
+  revokedById String?
+
+  batchPond BatchPond @relation(fields: [batchPondId], references: [id])
+  user      User      @relation("FastingOverrideCreatedBy", fields: [userId], references: [id])
+  revokedBy User?     @relation("FastingOverrideRevokedBy", fields: [revokedById], references: [id])
+
+  @@index([batchPondId, startsAt])
+  @@index([userId])
+  @@index([revokedById])
+  @@map("fasting_override")
+}
+
+model PondDailyRecord {
+  id                 String    @id @default(cuid())
+  batchPondId        String
+  doc                Int
+  observedOn         DateTime? @db.Date
+  averageWeightGrams Decimal?  @db.Decimal(10, 3)
+  frMin              Decimal?  @db.Decimal(6, 4)
+  frMax              Decimal?  @db.Decimal(6, 4)
+  floc               Decimal?  @db.Decimal(10, 2)
+  ph                 Decimal?  @db.Decimal(4, 2)
+  tds                Decimal?  @db.Decimal(10, 2)
+  dissolvedOxygen    Decimal?  @db.Decimal(5, 2)
+  temperatureC       Decimal?  @db.Decimal(5, 2)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  batchPond BatchPond @relation(fields: [batchPondId], references: [id])
+
+  @@unique([batchPondId, doc])
+  @@index([batchPondId, observedOn])
+  @@map("pond_daily_record")
+}
+
+model PondStocking {
+  id           String   @id @default(cuid())
+  batchPondId  String
+  seedSourceId String
+  quantity     Int
+  occurredOn   DateTime @db.Date
+  userId       String
+  note         String?
+  createdAt    DateTime @default(now())
+
+  batchPond  BatchPond  @relation(fields: [batchPondId], references: [id])
+  seedSource SeedSource @relation(fields: [seedSourceId], references: [id])
+  user       User       @relation(fields: [userId], references: [id])
+
+  @@index([batchPondId, occurredOn])
+  @@index([seedSourceId])
+  @@index([userId])
+  @@map("pond_stocking")
+}
+
+model MortalityEvent {
+  id          String   @id @default(cuid())
+  batchPondId String
+  quantity    Int
+  occurredAt  DateTime
+  userId      String
+  note        String?
+  createdAt   DateTime @default(now())
+
+  batchPond BatchPond @relation(fields: [batchPondId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@index([batchPondId, occurredAt])
+  @@index([userId])
+  @@map("mortality_event")
+}
+
+model BibisRecord {
+  id            String   @id @default(cuid())
+  batchPondId   String
+  feedId        String
+  feedingOn     DateTime @db.Date
+  quantityGrams Int
+  preparedAt    DateTime
+  userId        String
+  note          String?
+  createdAt     DateTime @default(now())
+
+  batchPond BatchPond @relation(fields: [batchPondId], references: [id])
+  feed      Feed      @relation(fields: [feedId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  feedApplications FeedApplication[]
+
+  @@index([batchPondId, feedingOn])
+  @@index([feedId])
+  @@index([preparedAt])
+  @@index([userId])
+  @@map("bibis_record")
+}
+
+model FeedReceipt {
+  id            String   @id @default(cuid())
+  feedId        String
+  batchId       String?
+  quantityGrams Int
+  occurredAt    DateTime
+  userId        String
+  note          String?
+  createdAt     DateTime @default(now())
+
+  feed  Feed   @relation(fields: [feedId], references: [id])
+  batch Batch? @relation(fields: [batchId], references: [id])
+  user  User   @relation(fields: [userId], references: [id])
+
+  @@index([feedId, occurredAt])
+  @@index([batchId])
+  @@index([userId])
+  @@map("feed_receipt")
+}
+
+model FeedApplication {
+  id            String   @id @default(cuid())
+  batchPondId   String
+  feedId        String
+  bibisRecordId String?
+  quantityGrams Int
+  occurredAt    DateTime
+  userId        String
+  note          String?
+  createdAt     DateTime @default(now())
+
+  batchPond   BatchPond    @relation(fields: [batchPondId], references: [id])
+  feed        Feed         @relation(fields: [feedId], references: [id])
+  bibisRecord BibisRecord? @relation(fields: [bibisRecordId], references: [id])
+  user        User         @relation(fields: [userId], references: [id])
+
+  @@index([batchPondId, occurredAt])
+  @@index([feedId, occurredAt])
+  @@index([bibisRecordId])
+  @@index([userId])
+  @@map("feed_application")
+}
+
+model StockOpname {
+  id                    String   @id @default(cuid())
+  feedId                String
+  systemQuantityGrams   Int
+  physicalQuantityGrams Int
+  adjustmentGrams       Int
+  occurredAt            DateTime
+  userId                String
+  note                  String?
+  createdAt             DateTime @default(now())
+
+  feed Feed @relation(fields: [feedId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([feedId, occurredAt])
+  @@index([userId])
+  @@map("stock_opname")
+}
+
+model TreatmentLog {
+  id            String   @id @default(cuid())
+  batchPondId   String
+  treatmentId   String
+  quantityGrams Int
+  occurredAt    DateTime
+  userId        String
+  note          String?
+  createdAt     DateTime @default(now())
+
+  batchPond BatchPond @relation(fields: [batchPondId], references: [id])
+  treatment Treatment @relation(fields: [treatmentId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@index([batchPondId, occurredAt])
+  @@index([treatmentId, occurredAt])
+  @@index([userId])
+  @@map("treatment_log")
 }
