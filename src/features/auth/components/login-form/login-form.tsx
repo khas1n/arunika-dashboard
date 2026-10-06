@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { FC } from 'react'
 import { useForm } from '@tanstack/react-form'
 import { Eye, EyeOff } from 'lucide-react'
 import { Alert, AlertDescription } from '#/components/ui/alert'
@@ -21,11 +22,11 @@ import { toFieldErrors } from '#/lib/form-errors'
 import { loginSchema } from '#/features/auth/schemas/login'
 import type { LoginValues } from '#/features/auth/schemas/login'
 
-export function LoginForm({
-  onSubmit,
-}: {
+interface LoginFormProps {
   onSubmit: (values: LoginValues) => Promise<void>
-}) {
+}
+
+export const LoginForm: FC<LoginFormProps> = ({ onSubmit }) => {
   const [errorMessage, setErrorMessage] = useState<string>()
   const [showPassword, setShowPassword] = useState(false)
   const form = useForm({

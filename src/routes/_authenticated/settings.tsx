@@ -1,15 +1,8 @@
+import type { FC } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { PreferencesForm } from '#/features/settings/components/preferences-form'
 
-export const Route = createFileRoute('/_authenticated/settings')({
-  ssr: false,
-  head: () => ({
-    meta: [{ title: 'Pengaturan | Arunika' }],
-  }),
-  component: SettingsPage,
-})
-
-function SettingsPage() {
+const SettingsPage: FC = () => {
   return (
     <section className="grid gap-6">
       <div className="grid gap-1">
@@ -22,3 +15,11 @@ function SettingsPage() {
     </section>
   )
 }
+
+export const Route = createFileRoute('/_authenticated/settings')({
+  ssr: false,
+  head: () => ({
+    meta: [{ title: 'Pengaturan | Arunika' }],
+  }),
+  component: SettingsPage,
+})

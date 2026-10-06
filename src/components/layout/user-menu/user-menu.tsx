@@ -1,3 +1,4 @@
+import type { FC } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '#/components/ui/avatar'
 import { Button } from '#/components/ui/button'
 import {
@@ -9,17 +10,19 @@ import {
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
 
-export function UserMenu({
-  name,
-  email,
-  image,
-  onSignOut,
-}: {
+interface UserMenuProps {
   name: string
   email: string
   image: string | null
   onSignOut: () => void
-}) {
+}
+
+export const UserMenu: FC<UserMenuProps> = ({
+  name,
+  email,
+  image,
+  onSignOut,
+}) => {
   const initial = name.slice(0, 1).toUpperCase() || 'A'
 
   return (

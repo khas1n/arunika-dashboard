@@ -1,3 +1,4 @@
+import type { FC } from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { Home, Settings, UserRound } from 'lucide-react'
 import {
@@ -18,7 +19,7 @@ const items = [
   { to: '/settings', label: 'Pengaturan', icon: Settings },
 ] as const
 
-export function AppSidebar() {
+export const AppSidebar: FC = () => {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })

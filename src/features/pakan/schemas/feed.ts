@@ -28,12 +28,30 @@ export const feedIdSchema = z.object({ id: idSchema })
 export const feedItemSchema = z.object({
   id: idSchema,
   name: z.string(),
-  createdAt: z.date(),
+  createdAt: z.coerce.date(),
   /** Rows elsewhere that point at this feed. A feed in use cannot be deleted. */
   usageCount: z.number().int().nonnegative(),
+})
+
+export const feedSortIdSchema = z.enum(['name', 'createdAt'])
+
+/** Page, search, and sort for the feed list. Shared by the table and the API. */
+export const feedListQuerySchema = z.object({
+  pageIndex: z.number().int().min(0),
+  pageSize: z.number().int().min(1).max(100),
+  search: z.string().trim().max(60),
+  sortId: feedSortIdSchema,
+  sortDesc: z.boolean(),
+})
+
+export const feedListSchema = z.object({
+  rows: z.array(feedItemSchema),
+  rowCount: z.number().int().nonnegative(),
 })
 
 export type FeedInput = z.infer<typeof feedInputSchema>
 export type FeedUpdateInput = z.infer<typeof feedUpdateSchema>
 export type FeedIdInput = z.infer<typeof feedIdSchema>
 export type FeedItem = z.infer<typeof feedItemSchema>
+export type FeedListQuery = z.infer<typeof feedListQuerySchema>
+export type FeedList = z.infer<typeof feedListSchema>

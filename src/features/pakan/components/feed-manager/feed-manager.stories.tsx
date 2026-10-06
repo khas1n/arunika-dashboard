@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/tanstack-react'
-import { expect, fn } from 'storybook/test'
+import { expect, fn, screen, within } from 'storybook/test'
 
 import { FeedManager } from './feed-manager'
 
@@ -52,10 +52,13 @@ export const Add: Story = {
 export const Edit: Story = {
   play: async ({ args, canvas, userEvent }) => {
     await userEvent.click(canvas.getByRole('button', { name: 'Ubah 781' }))
-    const [, editInput] = canvas.getAllByLabelText('Nama jenis pakan')
+    const dialog = await screen.findByRole('dialog')
+    const editInput = within(dialog).getByLabelText('Nama jenis pakan')
     await userEvent.clear(editInput)
     await userEvent.type(editInput, '781 Premium')
-    await userEvent.click(canvas.getByRole('button', { name: 'Simpan' }))
+    await userEvent.click(
+      within(dialog).getByRole('button', { name: 'Simpan' }),
+    )
     await expect(args.onUpdate).toHaveBeenCalledWith({
       id: 'feed-1',
       name: '781 Premium',
@@ -66,8 +69,9 @@ export const Edit: Story = {
 export const EditCancelled: Story = {
   play: async ({ args, canvas, userEvent }) => {
     await userEvent.click(canvas.getByRole('button', { name: 'Ubah 781' }))
-    await userEvent.click(canvas.getByRole('button', { name: 'Batal' }))
-    await expect(canvas.getByRole('button', { name: 'Ubah 781' })).toBeVisible()
+    const dialog = await screen.findByRole('dialog')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Batal' }))
+    await canvas.findByRole('button', { name: 'Ubah 781' })
     await expect(args.onUpdate).not.toHaveBeenCalled()
   },
 }
@@ -75,8 +79,9 @@ export const EditCancelled: Story = {
 export const Delete: Story = {
   play: async ({ args, canvas, userEvent }) => {
     await userEvent.click(canvas.getByRole('button', { name: 'Hapus 781' }))
-    await expect(canvas.getByText('Hapus 781?')).toBeVisible()
-    await userEvent.click(canvas.getByRole('button', { name: 'Hapus' }))
+    const dialog = await screen.findByRole('alertdialog')
+    await within(dialog).findByText('Hapus 781?')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Hapus' }))
     await expect(args.onDelete).toHaveBeenCalledWith('feed-1')
   },
 }
@@ -89,9 +94,10 @@ export const DeleteFailed: Story = {
   },
   play: async ({ canvas, userEvent }) => {
     await userEvent.click(canvas.getByRole('button', { name: 'Hapus 781' }))
-    await userEvent.click(canvas.getByRole('button', { name: 'Hapus' }))
+    const dialog = await screen.findByRole('alertdialog')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Hapus' }))
     await expect(
-      await canvas.findByText(
+      await within(dialog).findByText(
         'Jenis pakan sudah dipakai dan tidak bisa dihapus.',
       ),
     ).toBeVisible()

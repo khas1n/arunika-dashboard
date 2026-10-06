@@ -1,3 +1,4 @@
+import type { FC } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '#/components/ui/card'
 
 interface ProfileSession {
@@ -23,7 +24,11 @@ function formatDate(value: string) {
   return dateTime.format(new Date(value))
 }
 
-export function ProfileDetails({ session }: { session: ProfileSession }) {
+interface ProfileDetailsProps {
+  session: ProfileSession
+}
+
+export const ProfileDetails: FC<ProfileDetailsProps> = ({ session }) => {
   const rows = [
     ['Nama', session.user.name],
     ['Nama pengguna', session.user.username],

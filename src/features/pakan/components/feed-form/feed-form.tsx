@@ -1,24 +1,32 @@
 import { useId, useState } from 'react'
+import type { FC } from 'react'
 import { useForm } from '@tanstack/react-form'
 import { Alert, AlertDescription } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
-import { Field, FieldError, FieldLabel } from '#/components/ui/field'
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
 import { toFieldErrors } from '#/lib/form-errors'
 import { feedInputSchema } from '#/features/pakan/schemas/feed'
 import type { FeedInput } from '#/features/pakan/schemas/feed'
 
-export function FeedForm({
-  defaultName = '',
-  submitLabel,
-  onSubmit,
-  onCancel,
-}: {
+interface FeedFormProps {
   defaultName?: string
   submitLabel: string
   onSubmit: (values: FeedInput) => Promise<unknown>
   onCancel?: () => void
-}) {
+}
+
+export const FeedForm: FC<FeedFormProps> = ({
+  defaultName = '',
+  submitLabel,
+  onSubmit,
+  onCancel,
+}) => {
   const inputId = useId()
   const [errorMessage, setErrorMessage] = useState<string>()
   const form = useForm({
@@ -53,27 +61,29 @@ export function FeedForm({
         </Alert>
       ) : null}
 
-      <form.Field name="name">
-        {(field) => {
-          const invalid =
-            field.state.meta.isTouched && !field.state.meta.isValid
-          return (
-            <Field data-invalid={invalid || undefined}>
-              <FieldLabel htmlFor={inputId}>Nama jenis pakan</FieldLabel>
-              <Input
-                id={inputId}
-                name={field.name}
-                autoComplete="off"
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(event) => field.handleChange(event.target.value)}
-                aria-invalid={invalid || undefined}
-              />
-              <FieldError errors={toFieldErrors(field.state.meta.errors)} />
-            </Field>
-          )
-        }}
-      </form.Field>
+      <FieldGroup>
+        <form.Field name="name">
+          {(field) => {
+            const invalid =
+              field.state.meta.isTouched && !field.state.meta.isValid
+            return (
+              <Field data-invalid={invalid || undefined}>
+                <FieldLabel htmlFor={inputId}>Nama jenis pakan</FieldLabel>
+                <Input
+                  id={inputId}
+                  name={field.name}
+                  autoComplete="off"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  aria-invalid={invalid || undefined}
+                />
+                <FieldError errors={toFieldErrors(field.state.meta.errors)} />
+              </Field>
+            )
+          }}
+        </form.Field>
+      </FieldGroup>
 
       <div className="flex gap-2">
         <form.Subscribe selector={(state) => state.isSubmitting}>

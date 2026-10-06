@@ -1,17 +1,16 @@
+import type { FC, ReactNode } from 'react'
 import { SidebarInset, SidebarProvider } from '#/components/ui/sidebar'
 import { AppHeader } from '#/components/layout/app-header'
 import { AppSidebar } from '#/components/layout/app-sidebar'
 import { usePreferencesStore } from '#/stores/preferences-store'
 
-export function AppShell({
-  user,
-  onSignOut,
-  children,
-}: {
+interface AppShellProps {
   user: { name: string; email: string; image: string | null }
   onSignOut: () => void
-  children: React.ReactNode
-}) {
+  children: ReactNode
+}
+
+export const AppShell: FC<AppShellProps> = ({ user, onSignOut, children }) => {
   const sidebarOpen = usePreferencesStore((state) => state.sidebarOpen)
   const setSidebarOpen = usePreferencesStore((state) => state.setSidebarOpen)
 

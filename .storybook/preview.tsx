@@ -4,6 +4,7 @@ import { withThemeByClassName } from '@storybook/addon-themes'
 import { usePreferencesStore } from '../src/stores/preferences-store'
 
 import type { Preview } from '@storybook/tanstack-react'
+import { mswLoader } from 'msw-storybook-addon/csf3'
 
 import '../src/styles.css'
 
@@ -17,6 +18,7 @@ const queryClient = new QueryClient({
 })
 
 const preview: Preview = {
+  loaders: [mswLoader()],
   decorators: [
     withThemeByClassName({
       themes: {

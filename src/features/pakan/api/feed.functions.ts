@@ -9,12 +9,14 @@ import {
 import {
   feedIdSchema,
   feedInputSchema,
+  feedListQuerySchema,
   feedUpdateSchema,
 } from '#/features/pakan/schemas/feed'
 
 export const listFeedsFn = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
-  .handler(async () => listFeeds())
+  .validator(feedListQuerySchema)
+  .handler(async ({ data }) => listFeeds(data))
 
 export const createFeedFn = createServerFn({ method: 'POST' })
   .middleware([authMiddleware])

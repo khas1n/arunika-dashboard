@@ -1,20 +1,8 @@
+import type { FC } from 'react'
 import { Outlet, createFileRoute, redirect } from '@tanstack/react-router'
 import { sessionQueryOptions } from '#/features/auth/api/session.queries'
 
-export const Route = createFileRoute('/_guest')({
-  ssr: 'data-only',
-  beforeLoad: async ({ context }) => {
-    const session = await context.queryClient.ensureQueryData(
-      sessionQueryOptions(),
-    )
-    if (session) {
-      throw redirect({ to: '/' })
-    }
-  },
-  component: GuestLayout,
-})
-
-function GuestLayout() {
+const GuestLayout: FC = () => {
   return (
     <main className="grid min-h-svh lg:grid-cols-2">
       <div className="flex items-center justify-center p-6">
@@ -36,3 +24,16 @@ function GuestLayout() {
     </main>
   )
 }
+
+export const Route = createFileRoute('/_guest')({
+  ssr: 'data-only',
+  beforeLoad: async ({ context }) => {
+    const session = await context.queryClient.ensureQueryData(
+      sessionQueryOptions(),
+    )
+    if (session) {
+      throw redirect({ to: '/' })
+    }
+  },
+  component: GuestLayout,
+})

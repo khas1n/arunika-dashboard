@@ -3,6 +3,8 @@ import type {
   FeedIdInput,
   FeedInput,
   FeedItem,
+  FeedList,
+  FeedListQuery,
   FeedUpdateInput,
 } from '#/features/pakan/schemas/feed'
 
@@ -60,12 +62,29 @@ async function assertNameFree(name: string, exceptId?: string) {
   if (existing) throw new FeedError(DUPLICATE)
 }
 
-export async function listFeeds(): Promise<Array<FeedItem>> {
-  const rows = await prisma.feed.findMany({
-    orderBy: { name: 'asc' },
-    include: { _count: usageSelect },
-  })
-  return rows.map(toFeedItem)
+export async function listFeeds(query: FeedListQuery): Promise<FeedList> {
+  const search = query.search.trim()
+  const where = search
+    ? { name: { contains: search, mode: 'insensitive' as const } }
+    : {}
+  const direction = query.sortDesc ? ('desc' as const) : ('asc' as const)
+  const orderBy =
+    query.sortId === 'createdAt'
+      ? { createdAt: direction }
+      : { name: direction }
+
+  const [rows, rowCount] = await prisma.$transaction([
+    prisma.feed.findMany({
+      where,
+      orderBy,
+      skip: query.pageIndex * query.pageSize,
+      take: query.pageSize,
+      include: { _count: usageSelect },
+    }),
+    prisma.feed.count({ where }),
+  ])
+
+  return { rows: rows.map(toFeedItem), rowCount }
 }
 
 export async function createFeed(input: FeedInput): Promise<FeedItem> {

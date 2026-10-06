@@ -1,0 +1,25 @@
+---
+description: Components use a named props interface and an arrow FC
+globs: src/**/*.tsx
+alwaysApply: false
+---
+
+# React components
+
+Write every component outside `src/components/ui` as an arrow function typed with `FC`. Put its props on a named interface next to the component. A component with no props uses `FC` alone.
+
+```tsx
+import type { FC } from 'react'
+
+interface FeedTableProps {
+  rows: Array<FeedItem>
+}
+
+export const FeedTable: FC<FeedTableProps> = ({ rows }) => {
+  return null
+}
+```
+
+Leave `src/components/ui` as generated shadcn source. Hooks stay `function` declarations.
+
+Declare a route component before the route option that references it. Read that route with `getRouteApi`, because an arrow component is not hoisted.

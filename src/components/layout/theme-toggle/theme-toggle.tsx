@@ -1,7 +1,8 @@
+import type { FC } from 'react'
 import { Monitor, Moon, Sun } from 'lucide-react'
 import { Button } from '#/components/ui/button'
-import { usePreferencesStore  } from '#/stores/preferences-store'
-import type {Theme} from '#/stores/preferences-store';
+import { usePreferencesStore } from '#/stores/preferences-store'
+import type { Theme } from '#/stores/preferences-store'
 
 const nextTheme: Record<Theme, Theme> = {
   light: 'dark',
@@ -15,7 +16,7 @@ const labels: Record<Theme, string> = {
   system: 'Tema sistem. Klik untuk terang.',
 }
 
-export function ThemeToggle() {
+export const ThemeToggle: FC = () => {
   const theme = usePreferencesStore((state) => state.theme)
   const setTheme = usePreferencesStore((state) => state.setTheme)
   const Icon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor

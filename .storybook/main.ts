@@ -9,7 +9,9 @@ const config: StorybookConfig = {
     '@storybook/addon-docs',
     '@storybook/addon-mcp',
     '@storybook/addon-themes',
+    'msw-storybook-addon',
   ],
+  staticDirs: ['../public'],
   framework: '@storybook/tanstack-react',
 }
 

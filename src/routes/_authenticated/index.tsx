@@ -1,32 +1,31 @@
+import { useDebouncedValue } from '#/hooks/use-debounced-value'
+import type { FC } from 'react'
 import { useSuspenseQuery } from '@tanstack/react-query'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, getRouteApi } from '@tanstack/react-router'
+import { useServerTableControls } from '#/components/shared/data-table'
 import { dashboardSummaryQueryOptions } from '#/features/dashboard/api/dashboard.queries'
 import {
   DashboardPending,
   SummaryCards,
 } from '#/features/dashboard/components/summary-cards'
-import { feedsQueryOptions } from '#/features/pakan/api/feed.queries'
+import {
+  defaultFeedListQuery,
+  feedsQueryOptions,
+  toFeedListQuery,
+} from '#/features/pakan/api/feed.queries'
 import { FeedManager } from '#/features/pakan/components/feed-manager'
 import { useFeedActions } from '#/features/pakan/hooks/use-feed-actions'
 
-export const Route = createFileRoute('/_authenticated/')({
-  ssr: false,
-  loader: ({ context }) =>
-    Promise.all([
-      context.queryClient.ensureQueryData(dashboardSummaryQueryOptions()),
-      context.queryClient.ensureQueryData(feedsQueryOptions()),
-    ]).then(([summary]) => summary),
-  pendingComponent: DashboardPending,
-  head: () => ({
-    meta: [{ title: 'Beranda | Arunika' }],
-  }),
-  component: DashboardPage,
-})
+const routeApi = getRouteApi('/_authenticated/')
 
-function DashboardPage() {
-  const { session } = Route.useRouteContext()
-  const summary = Route.useLoaderData()
-  const { data: feeds } = useSuspenseQuery(feedsQueryOptions())
+const DashboardPage: FC = () => {
+  const { session } = routeApi.useRouteContext()
+  const summary = routeApi.useLoaderData()
+  const table = useServerTableControls()
+  const search = useDebouncedValue(table.state.globalFilter, 300)
+  const query = toFeedListQuery(table.state, search)
+  const feedsQuery = useSuspenseQuery(feedsQueryOptions(query))
+  const feeds = feedsQuery.data
   const { createFeed, updateFeed, deleteFeed } = useFeedActions()
 
   return (
@@ -44,7 +43,10 @@ function DashboardPage() {
         sessionCount={summary.sessionCount}
       />
       <FeedManager
-        feeds={feeds}
+        feeds={feeds.rows}
+        rowCount={feeds.rowCount}
+        server={table}
+        isFetching={feedsQuery.isFetching && feedsQuery.isPlaceholderData}
         onCreate={createFeed}
         onUpdate={updateFeed}
         onDelete={deleteFeed}
@@ -52,3 +54,19 @@ function DashboardPage() {
     </section>
   )
 }
+
+export const Route = createFileRoute('/_authenticated/')({
+  ssr: false,
+  loader: ({ context }) =>
+    Promise.all([
+      context.queryClient.ensureQueryData(dashboardSummaryQueryOptions()),
+      context.queryClient.ensureQueryData(
+        feedsQueryOptions(defaultFeedListQuery),
+      ),
+    ]).then(([summary]) => summary),
+  pendingComponent: DashboardPending,
+  head: () => ({
+    meta: [{ title: 'Beranda | Arunika' }],
+  }),
+  component: DashboardPage,
+})

@@ -1,12 +1,15 @@
+import type { FC } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '#/components/ui/card'
 
-export function SummaryCards({
-  userCount,
-  sessionCount,
-}: {
+interface SummaryCardsProps {
   userCount: number
   sessionCount: number
-}) {
+}
+
+export const SummaryCards: FC<SummaryCardsProps> = ({
+  userCount,
+  sessionCount,
+}) => {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <Card>

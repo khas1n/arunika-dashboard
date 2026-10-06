@@ -1,8 +1,27 @@
-import { Outlet, createFileRoute, redirect } from '@tanstack/react-router'
+import type { FC } from 'react'
+import {
+  Outlet,
+  createFileRoute,
+  getRouteApi,
+  redirect,
+} from '@tanstack/react-router'
 import { AppShell } from '#/components/layout/app-shell'
 import { sessionQueryOptions } from '#/features/auth/api/session.queries'
 import { useSignOut } from '#/features/auth/hooks/use-sign-out'
 import { isSafeRedirect } from '#/features/auth/schemas/login'
+
+const routeApi = getRouteApi('/_authenticated')
+
+const AuthenticatedLayout: FC = () => {
+  const { session } = routeApi.useRouteContext()
+  const signOut = useSignOut()
+
+  return (
+    <AppShell user={session.user} onSignOut={() => void signOut()}>
+      <Outlet />
+    </AppShell>
+  )
+}
 
 export const Route = createFileRoute('/_authenticated')({
   ssr: 'data-only',
@@ -26,14 +45,3 @@ export const Route = createFileRoute('/_authenticated')({
   },
   component: AuthenticatedLayout,
 })
-
-function AuthenticatedLayout() {
-  const { session } = Route.useRouteContext()
-  const signOut = useSignOut()
-
-  return (
-    <AppShell user={session.user} onSignOut={() => void signOut()}>
-      <Outlet />
-    </AppShell>
-  )
-}
