@@ -70,6 +70,18 @@ export function jakartaDayStart(date: CalendarDate): Date {
   return new Date(toEpochDay(date) * DAY_MS - JAKARTA_OFFSET_MS)
 }
 
+/** Calendar date in Asia/Jakarta for an instant. */
+export function formatJakartaDate(instant: Date): CalendarDate {
+  return new Date(instant.getTime() + JAKARTA_OFFSET_MS)
+    .toISOString()
+    .slice(0, 10)
+}
+
+/** Today's calendar date in Asia/Jakarta. */
+export function todayInJakarta(now = new Date()): CalendarDate {
+  return formatJakartaDate(now)
+}
+
 function positiveModulo(value: number, divisor: number): number {
   return ((value % divisor) + divisor) % divisor
 }

@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
-import { Home, Settings, UserRound } from 'lucide-react'
+import { Home, Settings, UserRound, Waves } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +15,7 @@ import {
 
 const items = [
   { to: '/', label: 'Beranda', icon: Home },
+  { to: '/kolam', label: 'Kolam', icon: Waves },
   { to: '/profile', label: 'Profil', icon: UserRound },
   { to: '/settings', label: 'Pengaturan', icon: Settings },
 ] as const
