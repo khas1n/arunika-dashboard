@@ -52,6 +52,10 @@ export const pondDayQuerySchema = pageQuerySchema(pondDaySortSchema).extend({
   pondCode: pondCodeSchema,
 })
 
+export const biomassSeriesQuerySchema = z.object({
+  pondCode: pondCodeSchema,
+})
+
 export const kolamPondLinkSchema = z.object({
   code: z.string(),
   name: z.string(),
@@ -130,6 +134,16 @@ export const bibisPageSchema = pageSchema(bibisLineSchema)
 export const dadakanPageSchema = pageSchema(fastingOverrideItemSchema)
 export const pondDayPageSchema = pageSchema(pondDaySchema)
 
+export const biomassPointSchema = z.object({
+  date: calendarDateSchema,
+  biomassGrams: z.number(),
+})
+
+export const biomassSeriesSchema = z.object({
+  pondCode: pondCodeSchema,
+  points: z.array(biomassPointSchema),
+})
+
 export type PondListQuery = z.infer<typeof pondListQuerySchema>
 export type PondHeaderQuery = z.infer<typeof pondHeaderQuerySchema>
 export type BibisQuery = z.infer<typeof bibisQuerySchema>
@@ -141,3 +155,6 @@ export type PondDay = z.infer<typeof pondDaySchema>
 export type KolamCycle = z.infer<typeof kolamCycleSchema>
 export type BibisLine = z.infer<typeof bibisLineSchema>
 export type FastingOverrideItem = z.infer<typeof fastingOverrideItemSchema>
+export type BiomassSeriesQuery = z.infer<typeof biomassSeriesQuerySchema>
+export type BiomassPoint = z.infer<typeof biomassPointSchema>
+export type BiomassSeries = z.infer<typeof biomassSeriesSchema>

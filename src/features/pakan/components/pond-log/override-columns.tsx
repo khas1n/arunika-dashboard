@@ -5,6 +5,8 @@ import {
   createAppColumnHelper,
   DataTableAction,
   DataTableActions,
+  DataTableSelectAll,
+  DataTableSelectRow,
 } from '#/components/shared/data-table'
 import { StatusBadge } from '#/components/ui/badge'
 import { formatCalendar } from '#/features/pakan/components/pond-log/format-pond'
@@ -34,6 +36,21 @@ const EndCell: FC<{ row: FastingOverrideItem }> = ({ row }) => {
 const column = createAppColumnHelper<FastingOverrideItem>()
 
 export const overrideColumns = column.columns([
+  column.display({
+    id: 'select',
+    size: 40,
+    minSize: 40,
+    maxSize: 48,
+    enableSorting: false,
+    enableHiding: false,
+    enableResizing: false,
+    enablePinning: false,
+    enableCellSelection: false,
+    header: () => <DataTableSelectAll />,
+    cell: ({ row }) => (
+      <DataTableSelectRow row={row} label={`Pilih ${row.original.reason}`} />
+    ),
+  }),
   column.accessor('startsOn', {
     header: 'Mulai',
     cell: ({ getValue }) => formatCalendar(getValue()),

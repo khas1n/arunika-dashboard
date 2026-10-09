@@ -5,13 +5,22 @@ import {
   DataTableConfirmDialog,
   DataTableDialog,
   DataTableFrame,
+  DataTableSelectionBar,
   useAppTable,
 } from '#/components/shared/data-table'
 import type { ServerTableControls } from '#/components/shared/data-table'
 import { Button } from '#/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '#/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { BibisToday } from '#/features/pakan/components/bibis-today'
 import { FastingOverrideForm } from '#/features/pakan/components/fasting-override-form'
+import { BiomassChart } from '#/features/pakan/components/pond-log/biomass-chart'
 import {
   formatFcr,
   formatGrams,
@@ -24,6 +33,7 @@ import {
 import { pondDayColumns } from '#/features/pakan/components/pond-log/pond-day-columns'
 import type {
   BibisLine,
+  BiomassPoint,
   FastingOverrideInput,
   FastingOverrideItem,
   KolamCycle,
@@ -34,6 +44,7 @@ interface PondLogProps {
   prepareOn: string
   feedingOn: string
   cycle: KolamCycle | null
+  series: Array<BiomassPoint>
   days: Array<PondDay>
   dayRowCount?: number
   dayTable?: ServerTableControls
@@ -51,6 +62,7 @@ export const PondLog: FC<PondLogProps> = ({
   prepareOn,
   feedingOn,
   cycle,
+  series,
   days,
   dayRowCount,
   dayTable,
@@ -63,14 +75,17 @@ export const PondLog: FC<PondLogProps> = ({
   onCreateOverride,
   onRevokeOverride,
 }) => {
+  const [tab, setTab] = useState('harian')
   const [recording, setRecording] = useState(false)
   const [ending, setEnding] = useState<FastingOverrideItem>()
+  const [endingIds, setEndingIds] = useState<Array<string>>([])
   const [pendingEnd, setPendingEnd] = useState(false)
   const [endError, setEndError] = useState<string>()
   const table = useAppTable({
     data: days,
     columns: pondDayColumns,
     getRowId: (row) => String(row.doc),
+    enableRowSelection: false,
     initialState: { columnPinning: { start: ['date'], end: [] } },
     ...(dayTable ? { ...dayTable, rowCount: dayRowCount ?? days.length } : {}),
   })
@@ -78,92 +93,136 @@ export const PondLog: FC<PondLogProps> = ({
     data: overrides,
     columns: overrideColumns,
     getRowId: (row) => row.id,
+    enableRowSelection: (row) => !row.original.ended,
     ...(overrideTable
       ? { ...overrideTable, rowCount: overrideRowCount ?? overrides.length }
       : {}),
   })
+  const endingCount = endingIds.length
 
   return (
     <section className="grid min-w-0 gap-6">
-      <BibisToday prepareOn={prepareOn} feedingOn={feedingOn} items={bibis} />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="grid gap-1">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {cycle ? `Kolam ${cycle.pondCode}` : 'Kolam'}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Catatan harian, pakan aktual, dan bibis untuk kolam ini.
+          </p>
+        </div>
+        {cycle && tab === 'puasa' ? (
+          <Button type="button" size="sm" onClick={() => setRecording(true)}>
+            Catat puasa dadakan
+          </Button>
+        ) : null}
+      </div>
 
       {cycle == null ? (
         <p className="text-sm text-muted-foreground">
           Belum ada data kolam. Jalankan impor BATCH 1.
         </p>
       ) : (
-        <>
-          <Tabs defaultValue="harian" className="min-w-0">
-            <TabsList>
-              <TabsTrigger value="harian">
-                <CalendarDays />
-                Harian
-              </TabsTrigger>
-              <TabsTrigger value="puasa">
-                <UtensilsCrossed />
-                Puasa
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="harian" className="grid min-w-0 gap-4">
-              <div className="grid gap-3 sm:grid-cols-3">
-                <HeaderFact
-                  label="Asal bibit"
-                  value={cycle.seedSource ?? '—'}
-                />
-                <HeaderFact
-                  label="Jumlah bibit"
-                  value={formatGrams(cycle.seedCount)}
-                />
-                <HeaderFact
-                  label="Volume (m3)"
-                  value={formatQuantity(cycle.volumeM3)}
-                />
-                <HeaderFact
-                  label="Puasa"
-                  value={cycle.puasa ?? 'Belum diatur'}
-                />
-                <HeaderFact label="Pakan" value={cycle.feedName ?? '—'} />
-                <HeaderFact label="FCR" value={formatFcr(cycle.fcr)} />
-              </div>
-              <DataTableFrame>
-                <table.AppTable>
-                  <table.Grid
-                    emptyLabel="Belum ada catatan harian."
-                    isFetching={daysFetching}
-                  />
-                  <table.Pagination />
-                </table.AppTable>
-              </DataTableFrame>
-            </TabsContent>
-            <TabsContent value="puasa" className="grid min-w-0 gap-4">
-              <div className="flex flex-wrap items-end justify-end">
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => setRecording(true)}
-                >
-                  Catat puasa dadakan
-                </Button>
-              </div>
-              <OverrideEndProvider
-                onEnd={(override) => {
-                  setEndError(undefined)
-                  setEnding(override)
-                }}
-              >
+        <Tabs
+          value={tab}
+          onValueChange={setTab}
+          className="min-w-0 gap-6"
+        >
+          <TabsList>
+            <TabsTrigger value="harian">
+              <CalendarDays />
+              Harian
+            </TabsTrigger>
+            <TabsTrigger value="puasa">
+              <UtensilsCrossed />
+              Puasa
+            </TabsTrigger>
+          </TabsList>
+          <BibisToday
+            prepareOn={prepareOn}
+            feedingOn={feedingOn}
+            items={bibis}
+          />
+          <TabsContent value="harian" className="grid min-w-0 gap-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <MetricCard
+                label="Asal bibit"
+                value={cycle.seedSource ?? '—'}
+              />
+              <MetricCard
+                label="Jumlah bibit"
+                value={formatGrams(cycle.seedCount)}
+              />
+              <MetricCard
+                label="Volume (m3)"
+                value={formatQuantity(cycle.volumeM3)}
+              />
+              <MetricCard label="Puasa" value={cycle.puasa ?? 'Belum diatur'} />
+              <MetricCard label="Pakan" value={cycle.feedName ?? '—'} />
+              <MetricCard label="FCR" value={formatFcr(cycle.fcr)} />
+            </div>
+            <BiomassChart pondCode={cycle.pondCode} points={series} />
+            <Card className="min-w-0">
+              <CardHeader>
+                <CardTitle>Catatan harian</CardTitle>
+                <CardDescription>
+                  Satu halaman dari log. Grafik di atas memakai seluruh siklus.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="min-w-0">
                 <DataTableFrame>
-                  <overridesGrid.AppTable>
-                    <overridesGrid.Grid
-                      emptyLabel="Belum ada puasa dadakan."
-                      isFetching={overridesFetching}
+                  <table.AppTable>
+                    <table.Grid
+                      emptyLabel="Belum ada catatan harian."
+                      isFetching={daysFetching}
                     />
-                    <overridesGrid.Pagination />
-                  </overridesGrid.AppTable>
+                    <table.Pagination />
+                  </table.AppTable>
                 </DataTableFrame>
-              </OverrideEndProvider>
-            </TabsContent>
-          </Tabs>
-        </>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="puasa" className="grid min-w-0 gap-4">
+            <Card className="min-w-0">
+              <CardHeader>
+                <CardTitle>Puasa dadakan</CardTitle>
+                <CardDescription>
+                  Baris yang masih aktif bisa diakhiri. Yang sudah diakhiri
+                  tetap tersimpan.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="min-w-0">
+                <OverrideEndProvider
+                  onEnd={(override) => {
+                    setEndError(undefined)
+                    setEndingIds([])
+                    setEnding(override)
+                  }}
+                >
+                  <DataTableFrame>
+                    <DataTableSelectionBar
+                      actionLabel="Akhiri"
+                      pending={pendingEnd}
+                      onAction={(ids) => {
+                        setEndError(undefined)
+                        setEnding(undefined)
+                        setEndingIds(ids)
+                      }}
+                    >
+                      <overridesGrid.AppTable>
+                        <overridesGrid.Grid
+                          emptyLabel="Belum ada puasa dadakan."
+                          isFetching={overridesFetching}
+                        />
+                        <overridesGrid.Pagination />
+                      </overridesGrid.AppTable>
+                    </DataTableSelectionBar>
+                  </DataTableFrame>
+                </OverrideEndProvider>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       )}
 
       <DataTableDialog
@@ -214,20 +273,67 @@ export const PondLog: FC<PondLogProps> = ({
             .finally(() => setPendingEnd(false))
         }}
       />
+
+      <DataTableConfirmDialog
+        open={endingCount > 0}
+        onOpenChange={(open) => {
+          if (!open && !pendingEnd) {
+            setEndingIds([])
+            setEndError(undefined)
+          }
+        }}
+        title={`Akhiri ${endingCount} puasa dadakan?`}
+        description="Hanya baris yang masih aktif yang terpilih. Yang sudah diakhiri tidak berubah."
+        confirmLabel="Akhiri"
+        pending={pendingEnd}
+        error={endError}
+        onConfirm={() => {
+          const ids = endingIds
+          setPendingEnd(true)
+          setEndError(undefined)
+          void (async () => {
+            const failed: Array<string> = []
+            let message: string | undefined
+            for (const id of ids) {
+              try {
+                await onRevokeOverride(id)
+              } catch (error: unknown) {
+                failed.push(id)
+                message ??=
+                  error instanceof Error
+                    ? error.message
+                    : 'Terjadi kesalahan. Coba lagi.'
+              }
+            }
+            overridesGrid.setRowSelection(
+              Object.fromEntries(failed.map((id) => [id, true])),
+            )
+            if (failed.length === 0) setEndingIds([])
+            else {
+              setEndingIds(failed)
+              setEndError(message)
+            }
+          })().finally(() => setPendingEnd(false))
+        }}
+      />
     </section>
   )
 }
 
-interface HeaderFactProps {
+interface MetricCardProps {
   label: string
   value: string
 }
 
-const HeaderFact: FC<HeaderFactProps> = ({ label, value }) => {
+const MetricCard: FC<MetricCardProps> = ({ label, value }) => {
   return (
-    <div className="grid gap-1">
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-sm font-medium">{value}</span>
-    </div>
+    <Card>
+      <CardHeader className="gap-1">
+        <CardDescription>{label}</CardDescription>
+        <CardTitle className="text-2xl font-semibold tracking-tight">
+          {value}
+        </CardTitle>
+      </CardHeader>
+    </Card>
   )
 }

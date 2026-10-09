@@ -7,6 +7,7 @@ import {
   defaultPondDayQuery,
   defaultPondHeaderQuery,
   kolamBibisQueryOptions,
+  kolamBiomassQueryOptions,
   kolamDaysQueryOptions,
   kolamHeaderQueryOptions,
   kolamOverridesQueryOptions,
@@ -25,32 +26,23 @@ const KolamPage: FC<{ pondCode: string }> = ({ pondCode }) => {
   if (!cycle || !bibis) throw notFound()
 
   return (
-    <section className="grid min-w-0 gap-6">
-      <div className="grid gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Kolam {cycle.pondCode}
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Catatan harian, pakan aktual, dan bibis untuk kolam ini.
-        </p>
-      </div>
-      <PondLog
-        prepareOn={bibis.prepareOn}
-        feedingOn={bibis.feedingOn}
-        cycle={cycle}
-        days={page.days.rows}
-        dayRowCount={page.days.rowCount}
-        dayTable={page.dayTable}
-        daysFetching={page.daysFetching}
-        bibis={page.bibis.rows}
-        overrides={page.overrides.rows}
-        overrideRowCount={page.overrides.rowCount}
-        overrideTable={page.overrideTable}
-        overridesFetching={page.overridesFetching}
-        onCreateOverride={createOverride}
-        onRevokeOverride={revokeOverride}
-      />
-    </section>
+    <PondLog
+      prepareOn={bibis.prepareOn}
+      feedingOn={bibis.feedingOn}
+      cycle={cycle}
+      series={page.biomass.points}
+      days={page.days.rows}
+      dayRowCount={page.days.rowCount}
+      dayTable={page.dayTable}
+      daysFetching={page.daysFetching}
+      bibis={page.bibis.rows}
+      overrides={page.overrides.rows}
+      overrideRowCount={page.overrides.rowCount}
+      overrideTable={page.overrideTable}
+      overridesFetching={page.overridesFetching}
+      onCreateOverride={createOverride}
+      onRevokeOverride={revokeOverride}
+    />
   )
 }
 
@@ -70,6 +62,9 @@ export const Route = createFileRoute('/_authenticated/kolam/$pondCode')({
     await Promise.all([
       context.queryClient.ensureQueryData(
         kolamBibisQueryOptions(defaultBibisQuery(pondCode)),
+      ),
+      context.queryClient.ensureQueryData(
+        kolamBiomassQueryOptions({ pondCode }),
       ),
       context.queryClient.ensureQueryData(
         kolamDaysQueryOptions(defaultPondDayQuery(pondCode)),

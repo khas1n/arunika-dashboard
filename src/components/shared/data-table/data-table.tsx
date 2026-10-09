@@ -46,7 +46,9 @@ import {
   PinOff,
   RefreshCcw,
   Search,
+  X,
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import type { Header, Row, RowData } from '@tanstack/react-table'
 import { createTableHook } from '@tanstack/react-table'
 import { Button } from '#/components/ui/button'
@@ -317,11 +319,12 @@ const DataTablePaginationBar: FC<DataTablePaginationBarProps> = ({
     : [pageSize, ...pageSizeOptions].sort((left, right) => left - right)
   const atStart = pageIndex <= 0
   const atEnd = pageIndex + 1 >= pageCount
+  const canSelect = table.options.enableRowSelection !== false
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <p className="text-sm text-muted-foreground">
-        {selectedCount} dari {rowCount} baris dipilih.
+        {canSelect ? `${selectedCount} dari ${rowCount} baris dipilih.` : null}
       </p>
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
@@ -674,6 +677,7 @@ const DataTableGridBody: FC<DataTableGridBodyProps> = ({
 
   return (
     <div className="relative min-w-0">
+      <TableSelectionBar />
       {refreshing ? (
         <div className="pointer-events-none absolute top-3 right-3 z-30">
           <Spinner />
@@ -1356,6 +1360,95 @@ function visiblePageRows(table: {
   ].filter((row) => row.getCanSelect())
 }
 
+interface SelectionAction {
+  actionLabel: string
+  onAction: (ids: Array<string>) => void
+  pending: boolean
+  icon?: LucideIcon
+  destructive: boolean
+}
+
+const selectionActionContext = createContext<SelectionAction | null>(null)
+
+interface DataTableSelectionBarProps {
+  actionLabel: string
+  onAction: (ids: Array<string>) => void
+  pending?: boolean
+  icon?: LucideIcon
+  destructive?: boolean
+  children: ReactNode
+}
+
+export const DataTableSelectionBar: FC<DataTableSelectionBarProps> = ({
+  actionLabel,
+  onAction,
+  pending = false,
+  icon,
+  destructive = false,
+  children,
+}) => {
+  return (
+    <selectionActionContext.Provider
+      value={{ actionLabel, onAction, pending, icon, destructive }}
+    >
+      {children}
+    </selectionActionContext.Provider>
+  )
+}
+
+const TableSelectionBar: FC = () => {
+  const table = useTableContext()
+  const action = useContext(selectionActionContext)
+  const Icon = action?.icon
+
+  return (
+    <table.Subscribe selector={(state) => state.rowSelection}>
+      {(rowSelection) => {
+        const ids = Object.keys(rowSelection)
+        if (ids.length === 0) return null
+        return (
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex -translate-y-1/2 justify-center">
+            <div className="pointer-events-auto flex items-stretch overflow-hidden rounded-lg border bg-card text-sm text-card-foreground shadow-lg">
+              <span className="flex items-center px-3 font-medium">
+                {ids.length} dipilih
+              </span>
+              {action ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    'h-auto rounded-none border-l px-3 py-2',
+                    action.destructive &&
+                      'text-destructive hover:bg-destructive/10 hover:text-destructive',
+                  )}
+                  aria-label={action.actionLabel}
+                  disabled={action.pending}
+                  onClick={() => action.onAction(ids)}
+                >
+                  {Icon ? <Icon /> : null}
+                  {action.actionLabel}
+                </Button>
+              ) : null}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="rounded-none border-l"
+                aria-label="Bersihkan pilihan"
+                disabled={action?.pending}
+                onClick={() => table.resetRowSelection()}
+              >
+                <X />
+              </Button>
+            </div>
+          </div>
+        )
+      }}
+    </table.Subscribe>
+  )
+}
+
 export const DataTableSelectAll: FC = () => {
   const table = useTableContext()
 
@@ -1370,7 +1463,7 @@ export const DataTableSelectAll: FC = () => {
       {({ rowSelection }) => {
         const pageRows = visiblePageRows(table)
         const selectedCount = pageRows.filter(
-          (row) => rowSelection[row.id],
+          (row) => row.id in rowSelection,
         ).length
         const all = pageRows.length > 0 && selectedCount === pageRows.length
         const some = selectedCount > 0 && !all

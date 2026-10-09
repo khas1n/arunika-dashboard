@@ -2,12 +2,14 @@ import { keepPreviousData, queryOptions } from '@tanstack/react-query'
 import {
   getKolamHeaderFn,
   listKolamBibisFn,
+  listKolamBiomassFn,
   listKolamDaysFn,
   listKolamOverridesFn,
   listKolamPondsFn,
 } from '#/features/pakan/api/kolam.functions'
 import {
   bibisPageSchema,
+  biomassSeriesSchema,
   dadakanPageSchema,
   dadakanSortSchema,
   pondDayPageSchema,
@@ -17,6 +19,7 @@ import {
 } from '#/features/pakan/schemas/kolam'
 import type {
   BibisQuery,
+  BiomassSeriesQuery,
   DadakanQuery,
   PondDayQuery,
   PondHeaderQuery,
@@ -124,6 +127,14 @@ export function kolamBibisQueryOptions(query: BibisQuery) {
     queryKey: [...kolamQueryKey, 'bibis', query],
     queryFn: async () =>
       bibisPageSchema.parse(await listKolamBibisFn({ data: query })),
+  })
+}
+
+export function kolamBiomassQueryOptions(query: BiomassSeriesQuery) {
+  return queryOptions({
+    queryKey: [...kolamQueryKey, 'biomass', query.pondCode],
+    queryFn: async () =>
+      biomassSeriesSchema.parse(await listKolamBiomassFn({ data: query })),
   })
 }
 

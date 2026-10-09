@@ -4,6 +4,7 @@ import {
   defaultBibisQuery,
   defaultPondHeaderQuery,
   kolamBibisQueryOptions,
+  kolamBiomassQueryOptions,
   kolamDaysQueryOptions,
   kolamHeaderQueryOptions,
   kolamOverridesQueryOptions,
@@ -29,12 +30,14 @@ export function useKolamPage(pondCode: string) {
   const dadakanQuery = toDadakanQuery(pondCode, overrideTable.state)
   const header = useSuspenseQuery(kolamHeaderQueryOptions(headerQuery))
   const bibis = useSuspenseQuery(kolamBibisQueryOptions(bibisQuery))
+  const biomass = useSuspenseQuery(kolamBiomassQueryOptions({ pondCode }))
   const days = useQuery(kolamDaysQueryOptions(dayQuery))
   const overrides = useQuery(kolamOverridesQueryOptions(dadakanQuery))
 
   return {
     header: header.data,
     bibis: bibis.data,
+    biomass: biomass.data,
     days: days.data ?? { rows: [], rowCount: 0 },
     overrides: overrides.data ?? { rows: [], rowCount: 0 },
     dayTable,

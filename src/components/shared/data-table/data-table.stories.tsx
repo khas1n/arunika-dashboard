@@ -468,6 +468,7 @@ export const Paginated: Story = {
       canvas.getByRole('checkbox', { name: 'Pilih semua baris' }),
     )
     await expect(canvas.getByText('10 dari 87 baris dipilih.')).toBeVisible()
+    await expect(canvas.getByText('10 dipilih')).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Berikutnya' }))
     await expect(
       canvas.getByRole('checkbox', { name: 'Pilih semua baris' }),

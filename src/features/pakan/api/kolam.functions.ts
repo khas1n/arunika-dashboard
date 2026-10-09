@@ -4,6 +4,7 @@ import {
   createFastingOverride,
   getKolamHeader,
   listKolamBibis,
+  listKolamBiomass,
   listKolamDays,
   listKolamOverrides,
   listKolamPonds,
@@ -11,6 +12,7 @@ import {
 } from '#/features/pakan/api/kolam.server'
 import {
   bibisQuerySchema,
+  biomassSeriesQuerySchema,
   dadakanQuerySchema,
   fastingOverrideIdSchema,
   fastingOverrideInputSchema,
@@ -33,6 +35,11 @@ export const listKolamBibisFn = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
   .validator(bibisQuerySchema)
   .handler(async ({ data }) => listKolamBibis(data))
+
+export const listKolamBiomassFn = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware])
+  .validator(biomassSeriesQuerySchema)
+  .handler(async ({ data }) => listKolamBiomass(data.pondCode))
 
 export const listKolamDaysFn = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])

@@ -18,6 +18,7 @@ import type {
   DadakanQuery,
   FastingOverrideInput,
   FastingOverrideItem,
+  BiomassSeries,
   KolamCycle,
   KolamPondLink,
   PondDay,
@@ -97,6 +98,22 @@ export async function listKolamDays(
     compareDays(left, right, query),
   )
   return slicePage(days, query)
+}
+
+export async function listKolamBiomass(
+  pondCode: string,
+): Promise<BiomassSeries> {
+  const selected = (await loadBuilt()).cycles.find(
+    (cycle) => cycle.pondCode === pondCode,
+  )
+  const points = (selected?.days ?? []).flatMap((day) => {
+    if (day.date == null || day.biomassGrams == null) return []
+    return [{ date: day.date, biomassGrams: day.biomassGrams }]
+  })
+  points.sort((left, right) =>
+    left.date < right.date ? -1 : left.date > right.date ? 1 : 0,
+  )
+  return { pondCode, points }
 }
 
 export async function listKolamOverrides(

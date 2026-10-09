@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import type { FC } from 'react'
+import { Trash2 } from 'lucide-react'
 import {
   DataTableConfirmDialog,
   DataTableDialog,
   DataTableFrame,
+  DataTableSelectionBar,
   useAppTable,
 } from '#/components/shared/data-table'
 import type { ServerTableControls } from '#/components/shared/data-table'
@@ -34,6 +36,7 @@ export const FeedTable: FC<FeedTableProps> = ({
 }) => {
   const [editing, setEditing] = useState<FeedItem>()
   const [deleting, setDeleting] = useState<FeedItem>()
+  const [bulkIds, setBulkIds] = useState<Array<string>>([])
   const [pendingDelete, setPendingDelete] = useState(false)
   const [deleteError, setDeleteError] = useState<string>()
   const table = useAppTable({
@@ -41,6 +44,7 @@ export const FeedTable: FC<FeedTableProps> = ({
     columns: feedColumns,
     ...(server ? { ...server, rowCount: rowCount ?? rows.length } : {}),
     getRowId: (row) => row.id,
+    enableRowSelection: (row) => row.original.usageCount === 0,
   })
 
   const actions: FeedRowActions = {
@@ -57,18 +61,29 @@ export const FeedTable: FC<FeedTableProps> = ({
   return (
     <FeedRowActionsProvider value={actions}>
       <DataTableFrame>
-        <table.AppTable>
-          <table.Toolbar>
-            <table.Search label="Cari jenis pakan" />
-            <table.ViewOptions />
-          </table.Toolbar>
-          <table.Grid
-            emptyLabel="Belum ada jenis pakan."
-            isLoading={isLoading}
-            isFetching={isFetching}
-          />
-          <table.Pagination />
-        </table.AppTable>
+        <DataTableSelectionBar
+          actionLabel="Hapus"
+          icon={Trash2}
+          destructive
+          pending={pendingDelete}
+          onAction={(ids) => {
+            setDeleteError(undefined)
+            setBulkIds(ids)
+          }}
+        >
+          <table.AppTable>
+            <table.Toolbar>
+              <table.Search label="Cari jenis pakan" />
+              <table.ViewOptions />
+            </table.Toolbar>
+            <table.Grid
+              emptyLabel="Belum ada jenis pakan."
+              isLoading={isLoading}
+              isFetching={isFetching}
+            />
+            <table.Pagination />
+          </table.AppTable>
+        </DataTableSelectionBar>
         <DataTableDialog
           open={editing != null}
           onOpenChange={(open) => {
@@ -124,6 +139,50 @@ export const FeedTable: FC<FeedTableProps> = ({
               .finally(() => {
                 setPendingDelete(false)
               })
+          }}
+        />
+        <DataTableConfirmDialog
+          open={bulkIds.length > 0}
+          onOpenChange={(open) => {
+            if (!open && !pendingDelete) {
+              setBulkIds([])
+              setDeleteError(undefined)
+            }
+          }}
+          title={`Hapus ${bulkIds.length} jenis pakan?`}
+          description="Hanya jenis pakan yang belum dipakai yang terpilih. Yang sudah dipakai di catatan tetap."
+          confirmLabel="Hapus"
+          pending={pendingDelete}
+          error={deleteError}
+          onConfirm={() => {
+            const ids = bulkIds
+            setPendingDelete(true)
+            setDeleteError(undefined)
+            void (async () => {
+              const failed: Array<string> = []
+              let message: string | undefined
+              for (const id of ids) {
+                try {
+                  await onDelete(id)
+                } catch (error: unknown) {
+                  failed.push(id)
+                  message ??=
+                    error instanceof Error
+                      ? error.message
+                      : 'Terjadi kesalahan. Coba lagi.'
+                }
+              }
+              table.setRowSelection(
+                Object.fromEntries(failed.map((id) => [id, true])),
+              )
+              if (failed.length === 0) setBulkIds([])
+              else {
+                setBulkIds(failed)
+                setDeleteError(message)
+              }
+            })().finally(() => {
+              setPendingDelete(false)
+            })
           }}
         />
       </DataTableFrame>

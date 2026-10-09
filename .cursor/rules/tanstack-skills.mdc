@@ -1,0 +1,10 @@
+---
+description: Load the matching TanStack skill before editing
+alwaysApply: true
+---
+
+# TanStack skills
+
+Before a change that uses a TanStack package, or when the request names one, load that package’s skill. Run `pnpm exec intent list` from the repo root, then `pnpm exec intent load <package>#<skill>`. Follow the loaded skill. Do not implement from memory when a skill is installed.
+
+Packages in this repo that ship skills include charts, react-table, table-core, react-start, router-core, and the start cores. `@tanstack/react-query`, `@tanstack/react-form`, and `@tanstack/react-virtual` do not ship skills. Use the installed library for those.

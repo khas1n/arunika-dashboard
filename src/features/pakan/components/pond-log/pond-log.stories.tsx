@@ -84,6 +84,10 @@ const meta = {
         ended: false,
       },
     ],
+    series: [
+      { date: '2026-10-02', biomassGrams: 30000 },
+      { date: '2026-10-03', biomassGrams: 30000 },
+    ],
     onCreateOverride: fn(async () => {}),
     onRevokeOverride: fn(async () => {}),
   },
@@ -100,6 +104,11 @@ export const TwoPonds: Story = {
     ).not.toBeInTheDocument()
     await expect(canvas.getByText(formatGrams(412))).toBeVisible()
     await expect(canvas.queryByText(formatGrams(4267))).not.toBeInTheDocument()
+    await expect(
+      canvas.getByRole('img', {
+        name: 'Biomassa kolam A3 sepanjang siklus',
+      }),
+    ).toBeVisible()
     await expect(canvas.getByText('Dadakan')).toBeVisible()
     await expect(canvas.getAllByText('0').length).toBeGreaterThan(0)
   },
@@ -128,6 +137,7 @@ export const RecordsDadakan: Story = {
 export const Empty: Story = {
   args: {
     cycle: null,
+    series: [],
     days: [],
     bibis: [],
     overrides: [],

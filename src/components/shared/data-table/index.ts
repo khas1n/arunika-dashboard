@@ -3,6 +3,7 @@ export {
   DataTableExpand,
   DataTableFrame,
   DataTableSelectAll,
+  DataTableSelectionBar,
   DataTableSelectRow,
   useAppTable,
 } from '#/components/shared/data-table/data-table'
