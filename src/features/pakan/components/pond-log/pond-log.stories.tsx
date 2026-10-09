@@ -61,24 +61,16 @@ const meta = {
   args: {
     prepareOn: '2026-10-06',
     feedingOn: '2026-10-08',
-    cycles,
-    selectedId: 'a3',
+    cycle: cycles[0],
     days: [day, fastingDay],
     bibis: [
       {
         batchPondId: 'a3',
         pondCode: 'A3',
+        prepareOn: '2026-10-06',
         feedingOn: '2026-10-08',
         requiredGrams: 1000,
         remainingGrams: 1000,
-        fastingReason: null,
-      },
-      {
-        batchPondId: 'a6',
-        pondCode: 'A6',
-        feedingOn: '2026-10-08',
-        requiredGrams: 2500,
-        remainingGrams: 2500,
         fastingReason: null,
       },
     ],
@@ -89,9 +81,9 @@ const meta = {
         endsOn: '2026-10-03',
         reason: 'Air keruh',
         note: null,
+        ended: false,
       },
     ],
-    onSelectCycle: fn(),
     onCreateOverride: fn(async () => {}),
     onRevokeOverride: fn(async () => {}),
   },
@@ -103,7 +95,9 @@ type Story = StoryObj<typeof meta>
 export const TwoPonds: Story = {
   play: async ({ canvas }) => {
     await expect(canvas.getByText(`${formatGrams(1000)} g`)).toBeVisible()
-    await expect(canvas.getByText(`${formatGrams(2500)} g`)).toBeVisible()
+    await expect(
+      canvas.queryByText(`${formatGrams(2500)} g`),
+    ).not.toBeInTheDocument()
     await expect(canvas.getByText(formatGrams(412))).toBeVisible()
     await expect(canvas.queryByText(formatGrams(4267))).not.toBeInTheDocument()
     await expect(canvas.getByText('Dadakan')).toBeVisible()
@@ -113,6 +107,7 @@ export const TwoPonds: Story = {
 
 export const RecordsDadakan: Story = {
   play: async ({ args, canvas, userEvent }) => {
+    await userEvent.click(canvas.getByRole('tab', { name: 'Puasa' }))
     await userEvent.click(
       canvas.getByRole('button', { name: 'Catat puasa dadakan' }),
     )
@@ -132,8 +127,7 @@ export const RecordsDadakan: Story = {
 
 export const Empty: Story = {
   args: {
-    cycles: [],
-    selectedId: null,
+    cycle: null,
     days: [],
     bibis: [],
     overrides: [],

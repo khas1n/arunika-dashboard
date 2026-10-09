@@ -1,6 +1,6 @@
 import { useDebouncedValue } from '#/hooks/use-debounced-value'
 import type { FC } from 'react'
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, getRouteApi } from '@tanstack/react-router'
 import { useServerTableControls } from '#/components/shared/data-table'
 import { dashboardSummaryQueryOptions } from '#/features/dashboard/api/dashboard.queries'
@@ -24,8 +24,8 @@ const DashboardPage: FC = () => {
   const table = useServerTableControls()
   const search = useDebouncedValue(table.state.globalFilter, 300)
   const query = toFeedListQuery(table.state, search)
-  const feedsQuery = useSuspenseQuery(feedsQueryOptions(query))
-  const feeds = feedsQuery.data
+  const feedsQuery = useQuery(feedsQueryOptions(query))
+  const feeds = feedsQuery.data ?? { rows: [], rowCount: 0 }
   const { createFeed, updateFeed, deleteFeed } = useFeedActions()
 
   return (

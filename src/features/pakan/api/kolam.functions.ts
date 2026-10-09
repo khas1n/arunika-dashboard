@@ -2,19 +2,47 @@ import { createServerFn } from '@tanstack/react-start'
 import { authMiddleware } from '#/lib/auth-middleware'
 import {
   createFastingOverride,
-  getKolamLog,
+  getKolamHeader,
+  listKolamBibis,
+  listKolamDays,
+  listKolamOverrides,
+  listKolamPonds,
   revokeFastingOverride,
 } from '#/features/pakan/api/kolam.server'
 import {
+  bibisQuerySchema,
+  dadakanQuerySchema,
   fastingOverrideIdSchema,
   fastingOverrideInputSchema,
-  kolamQuerySchema,
+  pondDayQuerySchema,
+  pondHeaderQuerySchema,
+  pondListQuerySchema,
 } from '#/features/pakan/schemas/kolam'
 
-export const getKolamLogFn = createServerFn({ method: 'GET' })
+export const listKolamPondsFn = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
-  .validator(kolamQuerySchema)
-  .handler(async ({ data }) => getKolamLog(data))
+  .validator(pondListQuerySchema)
+  .handler(async ({ data }) => listKolamPonds(data))
+
+export const getKolamHeaderFn = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware])
+  .validator(pondHeaderQuerySchema)
+  .handler(async ({ data }) => getKolamHeader(data))
+
+export const listKolamBibisFn = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware])
+  .validator(bibisQuerySchema)
+  .handler(async ({ data }) => listKolamBibis(data))
+
+export const listKolamDaysFn = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware])
+  .validator(pondDayQuerySchema)
+  .handler(async ({ data }) => listKolamDays(data))
+
+export const listKolamOverridesFn = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware])
+  .validator(dadakanQuerySchema)
+  .handler(async ({ data }) => listKolamOverrides(data))
 
 export const createFastingOverrideFn = createServerFn({ method: 'POST' })
   .middleware([authMiddleware])

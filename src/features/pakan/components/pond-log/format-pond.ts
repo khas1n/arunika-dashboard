@@ -31,12 +31,6 @@ export function formatCalendar(value: string | null): string {
   return calendar.format(new Date(`${value}T00:00:00.000Z`))
 }
 
-export function formatFasting(value: 'pola' | 'dadakan' | null): string {
-  if (value === 'pola') return 'Pola'
-  if (value === 'dadakan') return 'Dadakan'
-  return '—'
-}
-
 export function formatFcr(value: number | null): string {
   if (value == null) return '—'
   return quantity.format(value)

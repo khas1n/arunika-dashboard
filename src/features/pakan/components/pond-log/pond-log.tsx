@@ -1,20 +1,26 @@
 import { useState } from 'react'
 import type { FC } from 'react'
+import { CalendarDays, UtensilsCrossed } from 'lucide-react'
 import {
   DataTableConfirmDialog,
   DataTableDialog,
   DataTableFrame,
   useAppTable,
 } from '#/components/shared/data-table'
+import type { ServerTableControls } from '#/components/shared/data-table'
 import { Button } from '#/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { BibisToday } from '#/features/pakan/components/bibis-today'
 import { FastingOverrideForm } from '#/features/pakan/components/fasting-override-form'
 import {
-  formatCalendar,
   formatFcr,
   formatGrams,
   formatQuantity,
 } from '#/features/pakan/components/pond-log/format-pond'
+import {
+  OverrideEndProvider,
+  overrideColumns,
+} from '#/features/pakan/components/pond-log/override-columns'
 import { pondDayColumns } from '#/features/pakan/components/pond-log/pond-day-columns'
 import type {
   BibisLine,
@@ -27,12 +33,16 @@ import type {
 interface PondLogProps {
   prepareOn: string
   feedingOn: string
-  cycles: Array<KolamCycle>
-  selectedId: string | null
+  cycle: KolamCycle | null
   days: Array<PondDay>
+  dayRowCount?: number
+  dayTable?: ServerTableControls
+  daysFetching?: boolean
   bibis: Array<BibisLine>
   overrides: Array<FastingOverrideItem>
-  onSelectCycle: (id: string) => void
+  overrideRowCount?: number
+  overrideTable?: ServerTableControls
+  overridesFetching?: boolean
   onCreateOverride: (values: FastingOverrideInput) => Promise<unknown>
   onRevokeOverride: (id: string) => Promise<unknown>
 }
@@ -40,12 +50,16 @@ interface PondLogProps {
 export const PondLog: FC<PondLogProps> = ({
   prepareOn,
   feedingOn,
-  cycles,
-  selectedId,
+  cycle,
   days,
+  dayRowCount,
+  dayTable,
+  daysFetching = false,
   bibis,
   overrides,
-  onSelectCycle,
+  overrideRowCount,
+  overrideTable,
+  overridesFetching = false,
   onCreateOverride,
   onRevokeOverride,
 }) => {
@@ -53,95 +67,102 @@ export const PondLog: FC<PondLogProps> = ({
   const [ending, setEnding] = useState<FastingOverrideItem>()
   const [pendingEnd, setPendingEnd] = useState(false)
   const [endError, setEndError] = useState<string>()
-  const selected = cycles.find((cycle) => cycle.id === selectedId) ?? null
   const table = useAppTable({
     data: days,
     columns: pondDayColumns,
     getRowId: (row) => String(row.doc),
+    initialState: { columnPinning: { start: ['date'], end: [] } },
+    ...(dayTable ? { ...dayTable, rowCount: dayRowCount ?? days.length } : {}),
+  })
+  const overridesGrid = useAppTable({
+    data: overrides,
+    columns: overrideColumns,
+    getRowId: (row) => row.id,
+    ...(overrideTable
+      ? { ...overrideTable, rowCount: overrideRowCount ?? overrides.length }
+      : {}),
   })
 
   return (
-    <section className="grid gap-6">
+    <section className="grid min-w-0 gap-6">
       <BibisToday prepareOn={prepareOn} feedingOn={feedingOn} items={bibis} />
 
-      {cycles.length === 0 || selected == null ? (
+      {cycle == null ? (
         <p className="text-sm text-muted-foreground">
           Belum ada data kolam. Jalankan impor BATCH 1.
         </p>
       ) : (
         <>
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <label className="grid gap-1 text-sm">
-              <span className="text-muted-foreground">Kolam</span>
-              <select
-                className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-                aria-label="Kolam"
-                value={selected.id}
-                onChange={(event) => onSelectCycle(event.target.value)}
-              >
-                {cycles.map((cycle) => (
-                  <option key={cycle.id} value={cycle.id}>
-                    {cycle.pondCode}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <Button type="button" size="sm" onClick={() => setRecording(true)}>
-              Catat puasa dadakan
-            </Button>
-          </div>
-
-          <div className="grid gap-3 rounded-md border p-4 sm:grid-cols-3">
-            <HeaderFact label="Asal bibit" value={selected.seedSource ?? '—'} />
-            <HeaderFact
-              label="Jumlah bibit"
-              value={formatGrams(selected.seedCount)}
-            />
-            <HeaderFact
-              label="Volume (m3)"
-              value={formatQuantity(selected.volumeM3)}
-            />
-            <HeaderFact
-              label="Puasa"
-              value={selected.puasa ?? 'Belum diatur'}
-            />
-            <HeaderFact label="Pakan" value={selected.feedName ?? '—'} />
-            <HeaderFact label="FCR" value={formatFcr(selected.fcr)} />
-          </div>
-
-          {overrides.length > 0 ? (
-            <ul className="grid gap-2">
-              {overrides.map((override) => (
-                <li
-                  key={override.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm"
+          <Tabs defaultValue="harian" className="min-w-0">
+            <TabsList>
+              <TabsTrigger value="harian">
+                <CalendarDays />
+                Harian
+              </TabsTrigger>
+              <TabsTrigger value="puasa">
+                <UtensilsCrossed />
+                Puasa
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="harian" className="grid min-w-0 gap-4">
+              <div className="grid gap-3 sm:grid-cols-3">
+                <HeaderFact
+                  label="Asal bibit"
+                  value={cycle.seedSource ?? '—'}
+                />
+                <HeaderFact
+                  label="Jumlah bibit"
+                  value={formatGrams(cycle.seedCount)}
+                />
+                <HeaderFact
+                  label="Volume (m3)"
+                  value={formatQuantity(cycle.volumeM3)}
+                />
+                <HeaderFact
+                  label="Puasa"
+                  value={cycle.puasa ?? 'Belum diatur'}
+                />
+                <HeaderFact label="Pakan" value={cycle.feedName ?? '—'} />
+                <HeaderFact label="FCR" value={formatFcr(cycle.fcr)} />
+              </div>
+              <DataTableFrame>
+                <table.AppTable>
+                  <table.Grid
+                    emptyLabel="Belum ada catatan harian."
+                    isFetching={daysFetching}
+                  />
+                  <table.Pagination />
+                </table.AppTable>
+              </DataTableFrame>
+            </TabsContent>
+            <TabsContent value="puasa" className="grid min-w-0 gap-4">
+              <div className="flex flex-wrap items-end justify-end">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => setRecording(true)}
                 >
-                  <span>
-                    Puasa dadakan {formatCalendar(override.startsOn)} –{' '}
-                    {formatCalendar(override.endsOn)}. {override.reason}
-                  </span>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setEndError(undefined)
-                      setEnding(override)
-                    }}
-                  >
-                    Akhiri
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-
-          <DataTableFrame>
-            <table.AppTable>
-              <table.Grid emptyLabel="Belum ada catatan harian." />
-              <table.Pagination />
-            </table.AppTable>
-          </DataTableFrame>
+                  Catat puasa dadakan
+                </Button>
+              </div>
+              <OverrideEndProvider
+                onEnd={(override) => {
+                  setEndError(undefined)
+                  setEnding(override)
+                }}
+              >
+                <DataTableFrame>
+                  <overridesGrid.AppTable>
+                    <overridesGrid.Grid
+                      emptyLabel="Belum ada puasa dadakan."
+                      isFetching={overridesFetching}
+                    />
+                    <overridesGrid.Pagination />
+                  </overridesGrid.AppTable>
+                </DataTableFrame>
+              </OverrideEndProvider>
+            </TabsContent>
+          </Tabs>
         </>
       )}
 
@@ -150,14 +171,14 @@ export const PondLog: FC<PondLogProps> = ({
         onOpenChange={setRecording}
         title="Puasa dadakan"
         description={
-          selected
-            ? `Catat puasa dadakan untuk kolam ${selected.pondCode}. Pola puasa tidak berubah.`
+          cycle
+            ? `Catat puasa dadakan untuk kolam ${cycle.pondCode}. Pola puasa tidak berubah.`
             : 'Catat puasa dadakan.'
         }
       >
-        {selected ? (
+        {cycle ? (
           <FastingOverrideForm
-            batchPondId={selected.id}
+            batchPondId={cycle.id}
             onCancel={() => setRecording(false)}
             onSubmit={async (values) => {
               await onCreateOverride(values)

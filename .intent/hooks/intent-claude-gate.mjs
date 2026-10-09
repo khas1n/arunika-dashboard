@@ -11,19 +11,7 @@ const CATALOG_COMMAND = "pnpm exec intent list --json --no-notices"
 const LOAD_COMMAND = "pnpm exec intent load <package>#<skill>"
 const EDIT_TOOLS = new Set(["Edit","MultiEdit","NotebookEdit","Write"])
 const GATE_DENY_REASON = "Blocked: check TanStack guidance before editing. If a listed skill matches, load it, then retry the edit."
-const parseIntentInvocation = function parseIntentInvocation(command) {
-	if (typeof command !== "string") return;
-	const match = command.match(/(?:^|&&|\|\||;|\|)\s*((?:bunx\s+--no-install\s+--package\s+@tanstack\/intent\s+intent)|(?:npm\s+exec\s+--no\s+--\s+intent)|(?:yarn\s+exec\s+intent)|(?:bunx\s+@tanstack\/intent(?:@latest)?)|(?:pnpm\s+exec\s+intent)|(?:pnpm\s+dlx\s+@tanstack\/intent(?:@latest)?)|(?:npx\s+@tanstack\/intent(?:@latest)?)|(?:yarn\s+dlx\s+@tanstack\/intent(?:@latest)?)|(?:(?:[^\s|;&]*[\\/])?intent))\s+(list|load)(?:\s+([^\s|;&]+))?/i);
-	if (!match?.[1] || !match[2]) return;
-	const action = match[2].toLowerCase();
-	if (action !== "list" && action !== "load") return;
-	const skillUse = action === "load" ? match[3] : void 0;
-	if (action === "load" && !skillUse) return;
-	return action === "load" ? {
-		action,
-		skillUse
-	} : { action };
-}
+const INTENT_INVOCATION_PATTERN = /(?:^|&&|\|\||;|\|)\s*((?:bunx\s+--no-install\s+--package\s+@tanstack\/intent\s+intent)|(?:npm\s+exec\s+--no\s+--\s+intent)|(?:yarn\s+exec\s+intent)|(?:bunx\s+@tanstack\/intent(?:@latest)?)|(?:pnpm\s+exec\s+intent)|(?:pnpm\s+dlx\s+@tanstack\/intent(?:@latest)?)|(?:npx\s+@tanstack\/intent(?:@latest)?)|(?:yarn\s+dlx\s+@tanstack\/intent(?:@latest)?)|(?:(?:[^\s|;&]*[\\/])?intent))\s+(list|load)(?:\s+([^\s|;&]+))?/i
 
 try {
   await main()
@@ -211,6 +199,17 @@ function stateFileForEvent(event) {
   const cwd = typeof event?.cwd === 'string' ? event.cwd : process.cwd()
   const key = createHash('sha256').update(AGENT + '\0' + cwd + '\0' + sessionId).digest('hex')
   return join(tmpdir(), 'tanstack-intent-hooks', key + '.jsonl')
+}
+
+function parseIntentInvocation(command) {
+  if (typeof command !== 'string') return undefined
+  const match = command.match(INTENT_INVOCATION_PATTERN)
+  if (!match?.[1] || !match[2]) return undefined
+  const action = match[2].toLowerCase()
+  if (action !== 'list' && action !== 'load') return undefined
+  const skillUse = action === 'load' ? match[3] : undefined
+  if (action === 'load' && !skillUse) return undefined
+  return action === 'load' ? { action, skillUse } : { action }
 }
 
 function observationFromEvent(event) {

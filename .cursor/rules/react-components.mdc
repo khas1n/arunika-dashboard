@@ -6,7 +6,7 @@ alwaysApply: false
 
 # React components
 
-Write every component outside `src/components/ui` as an arrow function typed with `FC`. Put its props on a named interface next to the component. A component with no props uses `FC` alone.
+Write every component as `const Name: FC<Props> = () => {}`, including files in `src/components/ui`. Put props on a named interface next to the component. A component with no props uses `FC` alone.
 
 ```tsx
 import type { FC } from 'react'
@@ -20,6 +20,15 @@ export const FeedTable: FC<FeedTableProps> = ({ rows }) => {
 }
 ```
 
-Leave `src/components/ui` as generated shadcn source. Hooks stay `function` declarations.
+Reuse a type that already exists. Do not write a second union for a size, variant, or prop that `Pick`, `Omit`, or `VariantProps` already names.
+
+```tsx
+// ❌ size?: 'default' | 'xs' | 'sm' | 'lg'
+// ✅ size?: BadgeProps['size']
+```
+
+Tailwind class names stay complete strings. Share a repeated string from one const. Do not build a class with `bg-${token}`.
+
+Hooks stay `function` declarations.
 
 Declare a route component before the route option that references it. Read that route with `getRouteApi`, because an arrow component is not hoisted.

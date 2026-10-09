@@ -1,0 +1,17 @@
+---
+description: Verify a page with the agent-browser CLI
+alwaysApply: true
+---
+
+# UI verification
+
+Check a page with the `agent-browser` CLI.
+
+```bash
+agent-browser close
+agent-browser open "http://localhost:6006/?path=/story/example--story&full=true"
+agent-browser wait --load networkidle
+agent-browser screenshot --full name.png
+```
+
+Storybook links include `&full=true`.

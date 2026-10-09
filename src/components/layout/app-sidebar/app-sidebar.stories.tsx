@@ -22,3 +22,18 @@ export const Default: Story = {
     </SidebarProvider>
   ),
 }
+
+export const WithPonds: Story = {
+  render: () => (
+    <SidebarProvider>
+      <AppSidebar
+        ponds={[
+          { code: 'A3', name: 'A3' },
+          { code: 'D3', name: 'D3' },
+          { code: 'A6', name: 'A6' },
+        ]}
+      />
+      <SidebarInset />
+    </SidebarProvider>
+  ),
+}

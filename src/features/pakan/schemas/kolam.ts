@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { pageQuerySchema, pageSchema } from '#/lib/page'
 
 /**
  * Shared contract for the Kolam log, today's bibis, and puasa dadakan.
@@ -10,8 +11,50 @@ const calendarDateSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'Tanggal wajib diisi')
 
-export const kolamQuerySchema = z.object({
-  batchPondId: idSchema.optional(),
+const pondCodeSchema = z.string().min(1)
+
+export const pondListSortSchema = z.enum(['batch'])
+export const pondHeaderSortSchema = z.enum(['pondCode'])
+export const bibisSortSchema = z.enum(['feedingOn'])
+export const dadakanSortSchema = z.enum(['status', 'startsOn', 'reason'])
+export const pondDaySortSchema = z.enum([
+  'date',
+  'doc',
+  'averageWeightGrams',
+  'frMin',
+  'frMax',
+  'deaths',
+  'population',
+  'biomassGrams',
+  'calculatedFeedGrams',
+  'operationalFeedGrams',
+  'actualFeedGrams',
+  'fastingReason',
+])
+
+export const pondListQuerySchema = pageQuerySchema(pondListSortSchema)
+
+export const pondHeaderQuerySchema = pageQuerySchema(
+  pondHeaderSortSchema,
+).extend({
+  pondCode: pondCodeSchema,
+})
+
+export const bibisQuerySchema = pageQuerySchema(bibisSortSchema).extend({
+  pondCode: pondCodeSchema,
+})
+
+export const dadakanQuerySchema = pageQuerySchema(dadakanSortSchema).extend({
+  pondCode: pondCodeSchema,
+})
+
+export const pondDayQuerySchema = pageQuerySchema(pondDaySortSchema).extend({
+  pondCode: pondCodeSchema,
+})
+
+export const kolamPondLinkSchema = z.object({
+  code: z.string(),
+  name: z.string(),
 })
 
 export const fastingOverrideInputSchema = z
@@ -65,6 +108,7 @@ export const kolamCycleSchema = z.object({
 export const bibisLineSchema = z.object({
   batchPondId: idSchema,
   pondCode: z.string(),
+  prepareOn: calendarDateSchema,
   feedingOn: calendarDateSchema,
   requiredGrams: z.number(),
   remainingGrams: z.number(),
@@ -77,22 +121,23 @@ export const fastingOverrideItemSchema = z.object({
   endsOn: calendarDateSchema,
   reason: z.string(),
   note: z.string().nullable(),
+  ended: z.boolean(),
 })
 
-export const kolamLogSchema = z.object({
-  prepareOn: calendarDateSchema,
-  feedingOn: calendarDateSchema,
-  cycles: z.array(kolamCycleSchema),
-  selectedId: idSchema.nullable(),
-  days: z.array(pondDaySchema),
-  bibis: z.array(bibisLineSchema),
-  overrides: z.array(fastingOverrideItemSchema),
-})
+export const pondListSchema = pageSchema(kolamPondLinkSchema)
+export const pondHeaderSchema = pageSchema(kolamCycleSchema)
+export const bibisPageSchema = pageSchema(bibisLineSchema)
+export const dadakanPageSchema = pageSchema(fastingOverrideItemSchema)
+export const pondDayPageSchema = pageSchema(pondDaySchema)
 
-export type KolamQuery = z.infer<typeof kolamQuerySchema>
+export type PondListQuery = z.infer<typeof pondListQuerySchema>
+export type PondHeaderQuery = z.infer<typeof pondHeaderQuerySchema>
+export type BibisQuery = z.infer<typeof bibisQuerySchema>
+export type DadakanQuery = z.infer<typeof dadakanQuerySchema>
+export type PondDayQuery = z.infer<typeof pondDayQuerySchema>
+export type KolamPondLink = z.infer<typeof kolamPondLinkSchema>
 export type FastingOverrideInput = z.infer<typeof fastingOverrideInputSchema>
 export type PondDay = z.infer<typeof pondDaySchema>
 export type KolamCycle = z.infer<typeof kolamCycleSchema>
 export type BibisLine = z.infer<typeof bibisLineSchema>
 export type FastingOverrideItem = z.infer<typeof fastingOverrideItemSchema>
-export type KolamLog = z.infer<typeof kolamLogSchema>

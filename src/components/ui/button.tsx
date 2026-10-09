@@ -14,12 +14,21 @@ const buttonVariants = cva(
         destructive:
           'bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40',
         outline:
-          'border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50',
+          'border bg-background shadow-xs hover:bg-secondary hover:text-secondary-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50',
         secondary:
           'bg-secondary text-secondary-foreground hover:bg-secondary/80',
         ghost:
-          'hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
+          'hover:bg-secondary hover:text-secondary-foreground dark:hover:bg-secondary/80',
         link: 'text-primary underline-offset-4 hover:underline',
+        success:
+          'bg-success text-success-foreground hover:bg-success/90 focus-visible:ring-success/20 dark:focus-visible:ring-success/40',
+        info: 'bg-info text-info-foreground hover:bg-info/90 focus-visible:ring-info/20 dark:focus-visible:ring-info/40',
+        warning:
+          'bg-warning text-warning-foreground hover:bg-warning/90 focus-visible:ring-warning/20 dark:focus-visible:ring-warning/40',
+        neutral:
+          'bg-neutral text-neutral-foreground hover:bg-neutral/90 focus-visible:ring-neutral/20 dark:focus-visible:ring-neutral/40',
+        accent:
+          'bg-accent text-accent-foreground hover:bg-accent/80 focus-visible:ring-ring/20',
       },
       size: {
         default: 'h-9 px-4 py-2 has-[>svg]:px-3',

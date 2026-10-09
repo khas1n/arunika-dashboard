@@ -25,11 +25,17 @@ function applyUpdater<T>(updater: Updater<T>, current: T): T {
  * slices (pinning, sizing, visibility, selection) stay inside the table.
  * Search and sort send the user back to the first page.
  */
-export function useServerTableControls() {
-  const [pagination, setPagination] = useState(
-    initialServerTableState.pagination,
+export function useServerTableControls(initial?: {
+  sorting?: SortingState
+  pageSize?: number
+}) {
+  const [pagination, setPagination] = useState({
+    ...initialServerTableState.pagination,
+    pageSize: initial?.pageSize ?? initialServerTableState.pagination.pageSize,
+  })
+  const [sorting, setSorting] = useState(
+    initial?.sorting ?? initialServerTableState.sorting,
   )
-  const [sorting, setSorting] = useState(initialServerTableState.sorting)
   const [globalFilter, setGlobalFilter] = useState(
     initialServerTableState.globalFilter,
   )

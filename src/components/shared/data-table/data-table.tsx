@@ -93,10 +93,11 @@ function columnBox(column: {
   getAfter: (position?: 'end') => number
 }): CSSProperties {
   const pinned = column.getIsPinned()
-  if (!pinned && column.id !== 'select') return {}
+  const size = column.getSize()
   return {
     position: pinned ? 'sticky' : undefined,
-    width: column.id === 'select' ? column.getSize() : undefined,
+    minWidth: size,
+    width: pinned || column.id === 'select' ? size : undefined,
     left: pinned === 'start' ? column.getStart('start') : undefined,
     right: pinned === 'end' ? column.getAfter('end') : undefined,
   }
@@ -672,7 +673,7 @@ const DataTableGridBody: FC<DataTableGridBodyProps> = ({
   const refreshing = isFetching && !isEmpty
 
   return (
-    <div className="relative">
+    <div className="relative min-w-0">
       {refreshing ? (
         <div className="pointer-events-none absolute top-3 right-3 z-30">
           <Spinner />
@@ -682,7 +683,7 @@ const DataTableGridBody: FC<DataTableGridBodyProps> = ({
         ref={scrollRef}
         aria-busy={isLoading || refreshing || undefined}
         className={cn(
-          'max-h-96 overflow-auto rounded-md border transition-opacity',
+          'max-h-96 min-w-0 overflow-auto rounded-md border transition-opacity',
           refreshing && 'opacity-60',
         )}
       >
@@ -697,7 +698,7 @@ const DataTableGridBody: FC<DataTableGridBodyProps> = ({
             <rowExpandControl.Provider
               value={{ overrides: expandOverrides, setOpen: setRowOpen }}
             >
-              <table className="w-full caption-bottom border-separate border-spacing-0 text-sm [&_tbody_td]:border-b [&_tbody_td]:border-border [&_th]:border-b [&_th]:border-border [&_tr]:border-b-0">
+              <table className="w-max min-w-full caption-bottom border-separate border-spacing-0 text-sm whitespace-nowrap [&_tbody_td]:border-b [&_tbody_td]:border-border [&_th]:border-b [&_th]:border-border [&_tr]:border-b-0">
                 <TableHeader className="sticky top-0 z-20 bg-muted">
                   {headerRows(table).map((headers) => (
                     <TableRow
@@ -1021,7 +1022,7 @@ const DataTableRow: FC<DataTableRowProps> = ({
                       : 'overflow-hidden',
                     pinned &&
                       'sticky z-10 bg-background data-pinned:bg-background',
-                    bound.getIsSelected() && 'bg-accent',
+                    bound.getIsSelected() && 'bg-secondary',
                     edges.left && 'border-l border-l-primary',
                     edges.right && 'border-r border-r-primary',
                     edges.top && 'border-t border-t-primary',
@@ -1485,7 +1486,7 @@ interface DataTableFrameProps {
 export const DataTableFrame: FC<DataTableFrameProps> = ({ children }) => {
   return (
     <TooltipProvider>
-      <div className="grid gap-4">{children}</div>
+      <div className="grid min-w-0 gap-4">{children}</div>
     </TooltipProvider>
   )
 }

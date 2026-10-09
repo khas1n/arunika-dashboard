@@ -15,6 +15,7 @@ const meta = {
       {
         batchPondId: 'a3',
         pondCode: 'A3',
+        prepareOn: '2026-10-06',
         feedingOn: '2026-10-08',
         requiredGrams: 1000,
         remainingGrams: 1000,
@@ -23,6 +24,7 @@ const meta = {
       {
         batchPondId: 'a6',
         pondCode: 'A6',
+        prepareOn: '2026-10-06',
         feedingOn: '2026-10-08',
         requiredGrams: 0,
         remainingGrams: 0,

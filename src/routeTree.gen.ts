@@ -16,6 +16,8 @@ import { Route as AuthenticatedKolamRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as GuestLoginRouteImport } from './routes/_guest/login'
+import { Route as AuthenticatedKolamIndexRouteImport } from './routes/_authenticated/kolam/index'
+import { Route as AuthenticatedKolamPondCodeRouteImport } from './routes/_authenticated/kolam/$pondCode'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -51,6 +53,17 @@ const GuestLoginRoute = GuestLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => GuestRouteRoute,
 } as any)
+const AuthenticatedKolamIndexRoute = AuthenticatedKolamIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedKolamRoute,
+} as any)
+const AuthenticatedKolamPondCodeRoute =
+  AuthenticatedKolamPondCodeRouteImport.update({
+    id: '/$pondCode',
+    path: '/$pondCode',
+    getParentRoute: () => AuthenticatedKolamRoute,
+  } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -59,37 +72,56 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
-  '/kolam': typeof AuthenticatedKolamRoute
+  '/kolam': typeof AuthenticatedKolamRouteWithChildren
   '/profile': typeof AuthenticatedProfileRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/login': typeof GuestLoginRoute
+  '/kolam/$pondCode': typeof AuthenticatedKolamPondCodeRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/kolam/': typeof AuthenticatedKolamIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
-  '/kolam': typeof AuthenticatedKolamRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/login': typeof GuestLoginRoute
+  '/kolam/$pondCode': typeof AuthenticatedKolamPondCodeRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/kolam': typeof AuthenticatedKolamIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_guest': typeof GuestRouteRouteWithChildren
-  '/_authenticated/kolam': typeof AuthenticatedKolamRoute
+  '/_authenticated/kolam': typeof AuthenticatedKolamRouteWithChildren
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_guest/login': typeof GuestLoginRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/kolam/$pondCode': typeof AuthenticatedKolamPondCodeRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/_authenticated/kolam/': typeof AuthenticatedKolamIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/kolam' | '/profile' | '/settings' | '/login' | '/api/auth/$'
+    | '/'
+    | '/kolam'
+    | '/profile'
+    | '/settings'
+    | '/login'
+    | '/kolam/$pondCode'
+    | '/api/auth/$'
+    | '/kolam/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/kolam' | '/profile' | '/settings' | '/login' | '/api/auth/$'
+  to:
+    | '/'
+    | '/profile'
+    | '/settings'
+    | '/login'
+    | '/kolam/$pondCode'
+    | '/api/auth/$'
+    | '/kolam'
   id:
     | '__root__'
     | '/_authenticated'
@@ -99,7 +131,9 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_guest/login'
     | '/_authenticated/'
+    | '/_authenticated/kolam/$pondCode'
     | '/api/auth/$'
+    | '/_authenticated/kolam/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -159,6 +193,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GuestLoginRouteImport
       parentRoute: typeof GuestRouteRoute
     }
+    '/_authenticated/kolam/': {
+      id: '/_authenticated/kolam/'
+      path: '/'
+      fullPath: '/kolam/'
+      preLoaderRoute: typeof AuthenticatedKolamIndexRouteImport
+      parentRoute: typeof AuthenticatedKolamRoute
+    }
+    '/_authenticated/kolam/$pondCode': {
+      id: '/_authenticated/kolam/$pondCode'
+      path: '/$pondCode'
+      fullPath: '/kolam/$pondCode'
+      preLoaderRoute: typeof AuthenticatedKolamPondCodeRouteImport
+      parentRoute: typeof AuthenticatedKolamRoute
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -169,15 +217,28 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedKolamRouteChildren {
+  AuthenticatedKolamPondCodeRoute: typeof AuthenticatedKolamPondCodeRoute
+  AuthenticatedKolamIndexRoute: typeof AuthenticatedKolamIndexRoute
+}
+
+const AuthenticatedKolamRouteChildren: AuthenticatedKolamRouteChildren = {
+  AuthenticatedKolamPondCodeRoute: AuthenticatedKolamPondCodeRoute,
+  AuthenticatedKolamIndexRoute: AuthenticatedKolamIndexRoute,
+}
+
+const AuthenticatedKolamRouteWithChildren =
+  AuthenticatedKolamRoute._addFileChildren(AuthenticatedKolamRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedKolamRoute: typeof AuthenticatedKolamRoute
+  AuthenticatedKolamRoute: typeof AuthenticatedKolamRouteWithChildren
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedKolamRoute: AuthenticatedKolamRoute,
+  AuthenticatedKolamRoute: AuthenticatedKolamRouteWithChildren,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,

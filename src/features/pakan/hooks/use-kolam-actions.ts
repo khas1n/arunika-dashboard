@@ -9,7 +9,13 @@ import type { FastingOverrideInput } from '#/features/pakan/schemas/kolam'
 export function useKolamActions() {
   const queryClient = useQueryClient()
   const refresh = () =>
-    queryClient.invalidateQueries({ queryKey: kolamQueryKey })
+    Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: [...kolamQueryKey, 'overrides'],
+      }),
+      queryClient.invalidateQueries({ queryKey: [...kolamQueryKey, 'days'] }),
+      queryClient.invalidateQueries({ queryKey: [...kolamQueryKey, 'bibis'] }),
+    ])
 
   const create = useMutation({
     mutationFn: (values: FastingOverrideInput) =>

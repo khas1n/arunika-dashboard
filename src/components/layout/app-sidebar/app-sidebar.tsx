@@ -11,19 +11,26 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
 } from '#/components/ui/sidebar'
 
 const items = [
   { to: '/', label: 'Beranda', icon: Home },
-  { to: '/kolam', label: 'Kolam', icon: Waves },
   { to: '/profile', label: 'Profil', icon: UserRound },
   { to: '/settings', label: 'Pengaturan', icon: Settings },
 ] as const
 
-export const AppSidebar: FC = () => {
+interface AppSidebarProps {
+  ponds?: Array<{ code: string; name: string }>
+}
+
+export const AppSidebar: FC<AppSidebarProps> = ({ ponds = [] }) => {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
+  const onKolam = pathname === '/kolam' || pathname.startsWith('/kolam/')
 
   return (
     <Sidebar collapsible="icon">
@@ -35,7 +42,46 @@ export const AppSidebar: FC = () => {
           <SidebarGroupLabel>Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === '/'}
+                  tooltip="Beranda"
+                >
+                  <Link to={items[0].to}>
+                    <Home />
+                    <span>Beranda</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={onKolam} tooltip="Kolam">
+                  <Link to="/kolam">
+                    <Waves />
+                    <span>Kolam</span>
+                  </Link>
+                </SidebarMenuButton>
+                {ponds.length > 0 ? (
+                  <SidebarMenuSub>
+                    {ponds.map((pond) => (
+                      <SidebarMenuSubItem key={pond.code}>
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={pathname === `/kolam/${pond.code}`}
+                        >
+                          <Link
+                            to="/kolam/$pondCode"
+                            params={{ pondCode: pond.code }}
+                          >
+                            <span>{pond.code}</span>
+                          </Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    ))}
+                  </SidebarMenuSub>
+                ) : null}
+              </SidebarMenuItem>
+              {items.slice(1).map((item) => (
                 <SidebarMenuItem key={item.to}>
                   <SidebarMenuButton
                     asChild

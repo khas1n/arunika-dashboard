@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { pageQuerySchema, pageSchema } from '#/lib/page'
 
 /**
  * Single source of truth for the Feed (jenis pakan) contract.
@@ -36,18 +37,11 @@ export const feedItemSchema = z.object({
 export const feedSortIdSchema = z.enum(['name', 'createdAt'])
 
 /** Page, search, and sort for the feed list. Shared by the table and the API. */
-export const feedListQuerySchema = z.object({
-  pageIndex: z.number().int().min(0),
-  pageSize: z.number().int().min(1).max(100),
+export const feedListQuerySchema = pageQuerySchema(feedSortIdSchema).extend({
   search: z.string().trim().max(60),
-  sortId: feedSortIdSchema,
-  sortDesc: z.boolean(),
 })
 
-export const feedListSchema = z.object({
-  rows: z.array(feedItemSchema),
-  rowCount: z.number().int().nonnegative(),
-})
+export const feedListSchema = pageSchema(feedItemSchema)
 
 export type FeedInput = z.infer<typeof feedInputSchema>
 export type FeedUpdateInput = z.infer<typeof feedUpdateSchema>

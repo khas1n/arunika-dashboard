@@ -1,7 +1,7 @@
 import { createAppColumnHelper } from '#/components/shared/data-table'
+import { StatusBadge } from '#/components/ui/badge'
 import {
   formatCalendar,
-  formatFasting,
   formatGrams,
   formatPercent,
   formatQuantity,
@@ -57,6 +57,13 @@ export const pondDayColumns = column.columns([
   }),
   column.accessor('fastingReason', {
     header: 'Puasa',
-    cell: ({ getValue }) => formatFasting(getValue()),
+    cell: ({ getValue }) => {
+      const value = getValue()
+      if (value === 'dadakan')
+        return <StatusBadge variant="warning">Dadakan</StatusBadge>
+      if (value === 'pola')
+        return <StatusBadge variant="info">Pola</StatusBadge>
+      return '—'
+    },
   }),
 ])

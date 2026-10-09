@@ -7,7 +7,7 @@ import {
   DataTableSelectAll,
   DataTableSelectRow,
 } from '#/components/shared/data-table'
-import { Badge } from '#/components/ui/badge'
+import { StatusBadge } from '#/components/ui/badge'
 import { formatDate } from '#/helpers/format-date'
 import type { FeedItem } from '#/features/pakan/schemas/feed'
 import { useFeedRowActions } from '#/features/pakan/components/feed-table/feed-row-actions'
@@ -67,8 +67,11 @@ export const feedColumns = column.columns([
     enableSorting: false,
     cell: ({ getValue }) => {
       const count = getValue()
-      if (count === 0) return <Badge variant="secondary">Belum dipakai</Badge>
-      return <Badge variant="outline">Dipakai di {count} catatan</Badge>
+      if (count === 0)
+        return <StatusBadge variant="neutral">Belum dipakai</StatusBadge>
+      return (
+        <StatusBadge variant="success">Dipakai di {count} catatan</StatusBadge>
+      )
     },
   }),
   column.display({
