@@ -2,7 +2,7 @@
 
 This is the domain model for the Pakan (feed and pond) data. The workbook analysis is in [pakan-xlsx-analysis.md](pakan-xlsx-analysis.md). The models are in [prisma/schema.prisma](../prisma/schema.prisma).
 
-Scope: schema, the migrations, the domain rule, and a small CRUD example on Beranda (jenis pakan). No row import and no other UI.
+The schema and domain rules below are still the model. The app now also has the Kolam screen, the feed list on Beranda, and `pnpm db:import` for BATCH 1. What an operator can do today is in [product.md](product.md).
 
 ## Principles
 

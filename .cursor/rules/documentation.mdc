@@ -1,0 +1,16 @@
+---
+description: Keep docs aligned with behavior changes
+alwaysApply: true
+---
+
+# Documentation
+
+When a change alters what an operator can do, how to run the app, or a domain word, update the matching doc in the same change.
+
+- Product scope and status: `docs/product.md` and the README status section.
+- Pakan words: `docs/GLOSSARY.md`. One word, one meaning.
+- A decision that is hard to reverse: a new file in `docs/adr/`.
+- Setup, scripts, and deploy: `docs/development.md` and the README command tables.
+- Agent workflow: `docs/ai-engineering.md`.
+
+Do not describe schema-only models as screens. Do not add customers, revenue, or deadlines that are not in the repo.

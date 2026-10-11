@@ -1,6 +1,6 @@
 # Glossary
 
-Terms for the pakan dashboard. A word here means one thing.
+Terms for the pakan dashboard. A word here means one thing. Product language, the roadmap, and open questions are in [product.md](product.md).
 
 ## Page
 
