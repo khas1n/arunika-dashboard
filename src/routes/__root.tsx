@@ -8,6 +8,7 @@ import {
   createRootRouteWithContext,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
+import { Toaster } from '#/components/ui/sonner'
 import { useApplyTheme } from '#/hooks/use-apply-theme'
 import type { RouterContext } from '#/router'
 import appCss from '../styles.css?url'
@@ -20,6 +21,7 @@ const RootComponent: FC = () => {
   return (
     <>
       <Outlet />
+      <Toaster />
       {import.meta.env.DEV ? (
         <TanStackDevtools
           config={{ position: 'bottom-right' }}

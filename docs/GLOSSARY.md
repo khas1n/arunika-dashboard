@@ -22,7 +22,11 @@ One paged Kolam read. The pond screen uses a separate list for each of these:
 
 The pond list has one sort: batch order A3, B3, C3, D3, A6, B6, C6, D6.
 
-The pond screen shows one tab at a time. The title is on the left, and Harian and Puasa sit under it. Bibis stays visible on both tabs. Harian is the pond facts, the biomass series, and the daily log. Puasa is puasa dadakan, and Catat puasa dadakan sits on the right. Another workbook sheet can become another tab later.
+The pond screen shows one tab at a time. The title is on the left, and Harian and Puasa sit under it. Bibis stays visible on both tabs. Harian is the pond facts, the biomass series, and the daily log. Catat harian sits on the right when Harian is selected. Puasa is puasa dadakan, and Catat puasa dadakan sits on the right. Another workbook sheet can become another tab later.
+
+## Harian input
+
+A Harian cell edit sets that day's inputs, and the derived columns are computed again. Deaths and actual feed replace that date's total.
 
 Creating or ending a puasa dadakan is not a list.
 

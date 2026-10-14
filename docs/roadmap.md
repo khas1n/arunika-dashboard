@@ -29,18 +29,18 @@ The README keeps the short version. This file is the detail.
 
 ## Phase 2 — Core fish-farm operations
 
-| Item                                                              | Status    | Evidence                                                                                                     |
-| ----------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------ |
-| Feed names on Beranda, delete blocked when the feed is used       | Completed | `src/features/pakan` feed list                                                                               |
-| Pond navigation and BATCH 1 history import                        | Completed | Kolam routes, `pnpm db:import`                                                                               |
-| Daily log, biomass for the whole cycle, FCR, bibis, puasa dadakan | Completed | Kolam page and domain functions                                                                              |
-| Add and edit a day's work, including deaths, in a form            | Planned   | Decided. The log is readable. The form is not built. A farm-specific list of what to record is a later shape |
-| Feed receipts, stock opname, and on-hand quantity as screens      | Proposed  | Models exist. The UI does not record them                                                                    |
-| Treatment records as a screen                                     | Proposed  | `Treatment` and `TreatmentLog` exist. No screen                                                              |
-| Fish purchasing and sales, in this app                            | Planned   | Decided. No model and no screen                                                                              |
-| Water quality                                                     | Proposed  | No model                                                                                                     |
+| Item                                                              | Status    | Evidence                                                                                                                                                |
+| ----------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Feed names on Beranda, delete blocked when the feed is used       | Completed | `src/features/pakan` feed list                                                                                                                          |
+| Pond navigation and BATCH 1 history import                        | Completed | Kolam routes, `pnpm db:import`                                                                                                                          |
+| Daily log, biomass for the whole cycle, FCR, bibis, puasa dadakan | Completed | Kolam page and domain functions                                                                                                                         |
+| Add and edit a day's work, including deaths, in a form            | Completed | Catat harian and inline edit of berat, FR, kematian, and pakan aktual. Derived columns are calculated again. A farm-specific checklist is a later shape |
+| Feed receipts, stock opname, and on-hand quantity as screens      | Proposed  | Models exist. The UI does not record them                                                                                                               |
+| Treatment records as a screen                                     | Proposed  | `Treatment` and `TreatmentLog` exist. No screen                                                                                                         |
+| Fish purchasing and sales, in this app                            | Planned   | Decided. No model and no screen                                                                                                                         |
+| Water quality                                                     | Proposed  | No model                                                                                                                                                |
 
-Next recording work is the daily form: add and edit the day's work, including deaths. Fish purchases and sales follow in this app. Stock counts and treatments stay candidates.
+Adding and editing a day's inputs is on the Harian log. A farm-specific list of what to record is still a later shape. Fish purchases and sales follow in this app. Stock counts and treatments stay candidates.
 
 ## Phase 3 — Operational intelligence
 

@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import type { FC } from 'react'
 import type { Meta, StoryObj } from '@storybook/tanstack-react'
 import { Pencil, Trash2 } from 'lucide-react'
@@ -7,8 +6,6 @@ import {
   DataTableAction,
   DataTableActionMenu,
   DataTableActions,
-  DataTableConfirmDialog,
-  DataTableDialog,
 } from '#/components/shared/data-table/data-table-actions'
 import { DataTableFrame } from '#/components/shared/data-table/data-table'
 
@@ -16,20 +13,10 @@ const onEdit = fn()
 const onDelete = fn()
 
 const ActionsDemo: FC = () => {
-  const [editing, setEditing] = useState(false)
-  const [deleting, setDeleting] = useState(false)
-
   return (
     <DataTableFrame>
       <DataTableActions>
-        <DataTableAction
-          label="Ubah 781"
-          icon={Pencil}
-          onClick={() => {
-            onEdit()
-            setEditing(true)
-          }}
-        />
+        <DataTableAction label="Ubah 781" icon={Pencil} onClick={onEdit} />
         <DataTableActionMenu
           label="Menu 781"
           items={[
@@ -37,30 +24,11 @@ const ActionsDemo: FC = () => {
               label: 'Hapus',
               icon: Trash2,
               destructive: true,
-              onSelect: () => {
-                onDelete()
-                setDeleting(true)
-              },
+              onSelect: onDelete,
             },
           ]}
         />
       </DataTableActions>
-      <DataTableDialog
-        open={editing}
-        onOpenChange={setEditing}
-        title="Ubah jenis pakan"
-        description="Ubah nama jenis pakan."
-      >
-        <p>Form ubah</p>
-      </DataTableDialog>
-      <DataTableConfirmDialog
-        open={deleting}
-        onOpenChange={setDeleting}
-        title="Hapus 781?"
-        description="Jenis pakan ini akan dihapus."
-        confirmLabel="Hapus"
-        onConfirm={() => setDeleting(false)}
-      />
     </DataTableFrame>
   )
 }
@@ -81,9 +49,6 @@ export const Default: Story = {
       'Ubah 781',
     )
     await userEvent.click(canvas.getByRole('button', { name: 'Ubah 781' }))
-    await expect(await screen.findByRole('dialog')).toHaveTextContent(
-      'Ubah jenis pakan',
-    )
     await expect(onEdit).toHaveBeenCalled()
   },
 }

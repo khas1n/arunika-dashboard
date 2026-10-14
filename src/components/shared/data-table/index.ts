@@ -11,8 +11,6 @@ export {
   DataTableAction,
   DataTableActionMenu,
   DataTableActions,
-  DataTableConfirmDialog,
-  DataTableDialog,
 } from '#/components/shared/data-table/data-table-actions'
 export {
   initialServerTableState,

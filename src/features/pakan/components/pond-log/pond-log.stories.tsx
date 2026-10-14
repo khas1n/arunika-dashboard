@@ -90,6 +90,7 @@ const meta = {
     ],
     onCreateOverride: fn(async () => {}),
     onRevokeOverride: fn(async () => {}),
+    onUpsertDay: fn(async () => {}),
   },
 } satisfies Meta<typeof PondLog>
 
@@ -111,6 +112,19 @@ export const TwoPonds: Story = {
     ).toBeVisible()
     await expect(canvas.getByText('Dadakan')).toBeVisible()
     await expect(canvas.getAllByText('0').length).toBeGreaterThan(0)
+  },
+}
+
+export const OpensHarian: Story = {
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.click(canvas.getByRole('button', { name: 'Catat harian' }))
+    await expect(
+      await screen.findByRole('heading', { name: 'Catat harian' }),
+    ).toBeVisible()
+    await expect(screen.getByLabelText('Tanggal')).toBeVisible()
+    await expect(screen.getByLabelText('Berat (g)')).toBeVisible()
+    await expect(screen.getByLabelText('Kematian')).toBeVisible()
+    await expect(screen.getByLabelText('Pakan aktual (g)')).toBeVisible()
   },
 }
 

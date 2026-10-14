@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import type { FC } from 'react'
 import { CalendarDays, UtensilsCrossed } from 'lucide-react'
+import { AppDialog } from '#/components/shared/app-dialog'
+import { ConfirmDialog } from '#/components/shared/confirm-dialog'
 import {
-  DataTableConfirmDialog,
-  DataTableDialog,
   DataTableFrame,
   DataTableSelectionBar,
   useAppTable,
@@ -20,6 +20,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { BibisToday } from '#/features/pakan/components/bibis-today'
 import { FastingOverrideForm } from '#/features/pakan/components/fasting-override-form'
+import { PondDayForm } from '#/features/pakan/components/pond-day-form'
 import { BiomassChart } from '#/features/pakan/components/pond-log/biomass-chart'
 import {
   formatFcr,
@@ -31,6 +32,7 @@ import {
   overrideColumns,
 } from '#/features/pakan/components/pond-log/override-columns'
 import { pondDayColumns } from '#/features/pakan/components/pond-log/pond-day-columns'
+import { PondDayEditProvider } from '#/features/pakan/components/pond-log/pond-day-cell'
 import type {
   BibisLine,
   BiomassPoint,
@@ -38,6 +40,7 @@ import type {
   FastingOverrideItem,
   KolamCycle,
   PondDay,
+  PondDayWrite,
 } from '#/features/pakan/schemas/kolam'
 
 interface PondLogProps {
@@ -56,6 +59,7 @@ interface PondLogProps {
   overridesFetching?: boolean
   onCreateOverride: (values: FastingOverrideInput) => Promise<unknown>
   onRevokeOverride: (id: string) => Promise<unknown>
+  onUpsertDay: (values: PondDayWrite) => Promise<unknown>
 }
 
 export const PondLog: FC<PondLogProps> = ({
@@ -74,9 +78,11 @@ export const PondLog: FC<PondLogProps> = ({
   overridesFetching = false,
   onCreateOverride,
   onRevokeOverride,
+  onUpsertDay,
 }) => {
   const [tab, setTab] = useState('harian')
   const [recording, setRecording] = useState(false)
+  const [recordingDay, setRecordingDay] = useState(false)
   const [ending, setEnding] = useState<FastingOverrideItem>()
   const [endingIds, setEndingIds] = useState<Array<string>>([])
   const [pendingEnd, setPendingEnd] = useState(false)
@@ -111,6 +117,11 @@ export const PondLog: FC<PondLogProps> = ({
             Catatan harian, pakan aktual, dan bibis untuk kolam ini.
           </p>
         </div>
+        {cycle && tab === 'harian' ? (
+          <Button type="button" size="sm" onClick={() => setRecordingDay(true)}>
+            Catat harian
+          </Button>
+        ) : null}
         {cycle && tab === 'puasa' ? (
           <Button type="button" size="sm" onClick={() => setRecording(true)}>
             Catat puasa dadakan
@@ -123,11 +134,7 @@ export const PondLog: FC<PondLogProps> = ({
           Belum ada data kolam. Jalankan impor BATCH 1.
         </p>
       ) : (
-        <Tabs
-          value={tab}
-          onValueChange={setTab}
-          className="min-w-0 gap-6"
-        >
+        <Tabs value={tab} onValueChange={setTab} className="min-w-0 gap-6">
           <TabsList>
             <TabsTrigger value="harian">
               <CalendarDays />
@@ -145,10 +152,7 @@ export const PondLog: FC<PondLogProps> = ({
           />
           <TabsContent value="harian" className="grid min-w-0 gap-4">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <MetricCard
-                label="Asal bibit"
-                value={cycle.seedSource ?? '—'}
-              />
+              <MetricCard label="Asal bibit" value={cycle.seedSource ?? '—'} />
               <MetricCard
                 label="Jumlah bibit"
                 value={formatGrams(cycle.seedCount)}
@@ -171,13 +175,30 @@ export const PondLog: FC<PondLogProps> = ({
               </CardHeader>
               <CardContent className="min-w-0">
                 <DataTableFrame>
-                  <table.AppTable>
-                    <table.Grid
-                      emptyLabel="Belum ada catatan harian."
-                      isFetching={daysFetching}
-                    />
-                    <table.Pagination />
-                  </table.AppTable>
+                  <PondDayEditProvider
+                    onSave={async (day, patch) => {
+                      if (day.date == null) return
+                      await onUpsertDay({
+                        batchPondId: cycle.id,
+                        date: day.date,
+                        averageWeightGrams: day.averageWeightGrams,
+                        frMin: day.frMin,
+                        frMax: day.frMax,
+                        deaths: day.deaths,
+                        actualFeedGrams: day.actualFeedGrams,
+                        create: false,
+                        ...patch,
+                      })
+                    }}
+                  >
+                    <table.AppTable>
+                      <table.Grid
+                        emptyLabel="Belum ada catatan harian."
+                        isFetching={daysFetching}
+                      />
+                      <table.Pagination />
+                    </table.AppTable>
+                  </PondDayEditProvider>
                 </DataTableFrame>
               </CardContent>
             </Card>
@@ -225,7 +246,32 @@ export const PondLog: FC<PondLogProps> = ({
         </Tabs>
       )}
 
-      <DataTableDialog
+      <AppDialog
+        open={recordingDay}
+        onOpenChange={setRecordingDay}
+        title="Catat harian"
+        description={
+          cycle
+            ? `Catat satu hari untuk kolam ${cycle.pondCode}. DOC diisi otomatis. Tanggal yang sudah ada ditolak.`
+            : 'Catat harian.'
+        }
+      >
+        {cycle ? (
+          <PondDayForm
+            onCancel={() => setRecordingDay(false)}
+            onSubmit={async (values) => {
+              await onUpsertDay({
+                ...values,
+                batchPondId: cycle.id,
+                create: true,
+              })
+              setRecordingDay(false)
+            }}
+          />
+        ) : null}
+      </AppDialog>
+
+      <AppDialog
         open={recording}
         onOpenChange={setRecording}
         title="Puasa dadakan"
@@ -245,9 +291,9 @@ export const PondLog: FC<PondLogProps> = ({
             }}
           />
         ) : null}
-      </DataTableDialog>
+      </AppDialog>
 
-      <DataTableConfirmDialog
+      <ConfirmDialog
         open={ending != null}
         onOpenChange={(open) => {
           if (!open) setEnding(undefined)
@@ -274,7 +320,7 @@ export const PondLog: FC<PondLogProps> = ({
         }}
       />
 
-      <DataTableConfirmDialog
+      <ConfirmDialog
         open={endingCount > 0}
         onOpenChange={(open) => {
           if (!open && !pendingEnd) {

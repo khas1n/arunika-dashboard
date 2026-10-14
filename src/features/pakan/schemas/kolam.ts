@@ -80,6 +80,34 @@ export const fastingOverrideInputSchema = z
 
 export const fastingOverrideIdSchema = z.object({ id: idSchema })
 
+const dayMeasurementSchema = z
+  .number()
+  .nonnegative('Tidak boleh negatif')
+  .nullable()
+const dayRateSchema = z
+  .number()
+  .min(0, 'Tidak boleh negatif')
+  .max(1, 'Maksimal 100%')
+  .nullable()
+const dayCountSchema = z
+  .number()
+  .int('Harus bilangan bulat')
+  .nonnegative('Tidak boleh negatif')
+
+export const pondDayFormSchema = z.object({
+  date: calendarDateSchema,
+  averageWeightGrams: dayMeasurementSchema,
+  frMin: dayRateSchema,
+  frMax: dayRateSchema,
+  deaths: dayCountSchema,
+  actualFeedGrams: dayCountSchema,
+})
+
+export const pondDayWriteSchema = pondDayFormSchema.extend({
+  batchPondId: idSchema,
+  create: z.boolean(),
+})
+
 const fastingLabelSchema = z.enum(['pola', 'dadakan']).nullable()
 
 export const pondDaySchema = z.object({
@@ -151,6 +179,8 @@ export type DadakanQuery = z.infer<typeof dadakanQuerySchema>
 export type PondDayQuery = z.infer<typeof pondDayQuerySchema>
 export type KolamPondLink = z.infer<typeof kolamPondLinkSchema>
 export type FastingOverrideInput = z.infer<typeof fastingOverrideInputSchema>
+export type PondDayFormValues = z.infer<typeof pondDayFormSchema>
+export type PondDayWrite = z.infer<typeof pondDayWriteSchema>
 export type PondDay = z.infer<typeof pondDaySchema>
 export type KolamCycle = z.infer<typeof kolamCycleSchema>
 export type BibisLine = z.infer<typeof bibisLineSchema>

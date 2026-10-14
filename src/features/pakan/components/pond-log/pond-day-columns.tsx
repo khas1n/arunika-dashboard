@@ -6,6 +6,7 @@ import {
   formatPercent,
   formatQuantity,
 } from '#/features/pakan/components/pond-log/format-pond'
+import { DayNumberCell } from '#/features/pakan/components/pond-log/pond-day-cell'
 import type { PondDay } from '#/features/pakan/schemas/kolam'
 
 const column = createAppColumnHelper<PondDay>()
@@ -21,19 +22,55 @@ export const pondDayColumns = column.columns([
   }),
   column.accessor('averageWeightGrams', {
     header: 'Berat (g)',
-    cell: ({ getValue }) => formatQuantity(getValue()),
+    cell: ({ row, getValue }) => (
+      <DayNumberCell
+        day={row.original}
+        field="averageWeightGrams"
+        label="Berat"
+        text={formatQuantity(getValue())}
+        fractionDigits={3}
+      />
+    ),
   }),
   column.accessor('frMin', {
     header: 'FR min',
-    cell: ({ getValue }) => formatPercent(getValue()),
+    cell: ({ row, getValue }) => (
+      <DayNumberCell
+        day={row.original}
+        field="frMin"
+        label="FR min"
+        text={formatPercent(getValue())}
+        fractionDigits={2}
+        scale={100}
+        max={100}
+      />
+    ),
   }),
   column.accessor('frMax', {
     header: 'FR max',
-    cell: ({ getValue }) => formatPercent(getValue()),
+    cell: ({ row, getValue }) => (
+      <DayNumberCell
+        day={row.original}
+        field="frMax"
+        label="FR max"
+        text={formatPercent(getValue())}
+        fractionDigits={2}
+        scale={100}
+        max={100}
+      />
+    ),
   }),
   column.accessor('deaths', {
     header: 'Kematian',
-    cell: ({ getValue }) => formatGrams(getValue()),
+    cell: ({ row, getValue }) => (
+      <DayNumberCell
+        day={row.original}
+        field="deaths"
+        label="Kematian"
+        text={formatGrams(getValue())}
+        emptyValue={0}
+      />
+    ),
   }),
   column.accessor('population', {
     header: 'Populasi',
@@ -53,7 +90,15 @@ export const pondDayColumns = column.columns([
   }),
   column.accessor('actualFeedGrams', {
     header: 'Pakan aktual (g)',
-    cell: ({ getValue }) => formatGrams(getValue()),
+    cell: ({ row, getValue }) => (
+      <DayNumberCell
+        day={row.original}
+        field="actualFeedGrams"
+        label="Pakan aktual"
+        text={formatGrams(getValue())}
+        emptyValue={0}
+      />
+    ),
   }),
   column.accessor('fastingReason', {
     header: 'Puasa',

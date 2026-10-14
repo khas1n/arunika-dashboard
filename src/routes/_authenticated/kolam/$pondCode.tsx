@@ -20,7 +20,7 @@ const routeApi = getRouteApi('/_authenticated/kolam/$pondCode')
 
 const KolamPage: FC<{ pondCode: string }> = ({ pondCode }) => {
   const page = useKolamPage(pondCode)
-  const { createOverride, revokeOverride } = useKolamActions()
+  const { createOverride, revokeOverride, upsertDay } = useKolamActions()
   const cycle = page.header.rows.at(0) ?? null
   const bibis = page.bibis.rows.at(0)
   if (!cycle || !bibis) throw notFound()
@@ -42,6 +42,7 @@ const KolamPage: FC<{ pondCode: string }> = ({ pondCode }) => {
       overridesFetching={page.overridesFetching}
       onCreateOverride={createOverride}
       onRevokeOverride={revokeOverride}
+      onUpsertDay={upsertDay}
     />
   )
 }

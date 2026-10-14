@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import type { FC } from 'react'
 import { Trash2 } from 'lucide-react'
+import { AppDialog } from '#/components/shared/app-dialog'
+import { ConfirmDialog } from '#/components/shared/confirm-dialog'
 import {
-  DataTableConfirmDialog,
-  DataTableDialog,
   DataTableFrame,
   DataTableSelectionBar,
   useAppTable,
@@ -84,7 +84,7 @@ export const FeedTable: FC<FeedTableProps> = ({
             <table.Pagination />
           </table.AppTable>
         </DataTableSelectionBar>
-        <DataTableDialog
+        <AppDialog
           open={editing != null}
           onOpenChange={(open) => {
             if (!open) setEditing(undefined)
@@ -106,8 +106,8 @@ export const FeedTable: FC<FeedTableProps> = ({
               }}
             />
           ) : null}
-        </DataTableDialog>
-        <DataTableConfirmDialog
+        </AppDialog>
+        <ConfirmDialog
           open={deleting != null}
           onOpenChange={(open) => {
             if (!open && !pendingDelete) {
@@ -141,7 +141,7 @@ export const FeedTable: FC<FeedTableProps> = ({
               })
           }}
         />
-        <DataTableConfirmDialog
+        <ConfirmDialog
           open={bulkIds.length > 0}
           onOpenChange={(open) => {
             if (!open && !pendingDelete) {

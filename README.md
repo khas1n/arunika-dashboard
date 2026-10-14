@@ -107,19 +107,19 @@ Imports go one way: routes, then features, then shared folders. A feature does n
 
 Statuses are evidence from the repo. There are no dates. The full tables are in [docs/roadmap.md](docs/roadmap.md).
 
-| Phase                       | Now                                                                                                                              |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Foundation               | Sessions, shell, Postgres, and stories are in place. One account type. Open source, translations, and CI are planned             |
-| 2. Fish-farm operations     | Feed names, imported history, biomass, bibis, and puasa dadakan work. Daily forms, stock, treatments, and fish sales are planned |
-| 3. Operational intelligence | FCR and biomass are on the pond. Beranda is still user and session counts                                                        |
-| 4. Other industries         | Not chosen yet. The code is a fish-farm app                                                                                      |
-| Engineering workflow        | Cursor rules, Intent skills, and [docs/ai-engineering.md](docs/ai-engineering.md)                                                |
+| Phase                       | Now                                                                                                                                      |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Foundation               | Sessions, shell, Postgres, and stories are in place. One account type. Open source, translations, and CI are planned                     |
+| 2. Fish-farm operations     | Feed names, imported history, biomass, bibis, puasa dadakan, and Harian add and edit work. Stock, treatments, and fish sales are planned |
+| 3. Operational intelligence | FCR and biomass are on the pond. Beranda is still user and session counts                                                                |
+| 4. Other industries         | Not chosen yet. The code is a fish-farm app                                                                                              |
+| Engineering workflow        | Cursor rules, Intent skills, and [docs/ai-engineering.md](docs/ai-engineering.md)                                                        |
 
 ## Status and limits
 
 - Any farm is meant to run its own copy. The source is not public yet. There is no farm switcher inside one deployment.
 - One account type. Sign-up in the browser is still off. Accounts come from the seed or `pnpm user:create`.
-- History for days comes from the workbook import. Adding and editing a day in the app is planned, not built.
+- History for days comes from the workbook import. Harian can add a day and edit that day's weight, FR, deaths, and actual feed. Derived columns are calculated again.
 - `pnpm db:import` replaces BATCH 1 cycles. It does not write puasa dadakan.
 - Several Prisma models (receipts, stock opname, treatments) have no screen yet.
 - Nitro is a beta dependency. There is no CI workflow in the repo.

@@ -1,24 +1,7 @@
 import type { FC, ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import { Ellipsis } from 'lucide-react'
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '#/components/ui/alert-dialog'
-import { Alert, AlertDescription } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '#/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -129,84 +112,5 @@ export const DataTableActionMenu: FC<DataTableActionMenuProps> = ({
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
-}
-
-interface DataTableDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  title: string
-  description?: string
-  children: ReactNode
-}
-
-export const DataTableDialog: FC<DataTableDialogProps> = ({
-  open,
-  onOpenChange,
-  title,
-  description,
-  children,
-}) => {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription className={cn(!description && 'sr-only')}>
-            {description ?? title}
-          </DialogDescription>
-        </DialogHeader>
-        {children}
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-interface DataTableConfirmDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  title: string
-  description: string
-  confirmLabel: string
-  pending?: boolean
-  error?: string
-  onConfirm: () => void
-}
-
-export const DataTableConfirmDialog: FC<DataTableConfirmDialogProps> = ({
-  open,
-  onOpenChange,
-  title,
-  description,
-  confirmLabel,
-  pending = false,
-  error,
-  onConfirm,
-}) => {
-  return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription>{description}</AlertDialogDescription>
-        </AlertDialogHeader>
-        {error ? (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        ) : null}
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={pending}>Batal</AlertDialogCancel>
-          <Button
-            type="button"
-            variant="destructive"
-            loading={pending}
-            onClick={onConfirm}
-          >
-            {confirmLabel}
-          </Button>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
   )
 }

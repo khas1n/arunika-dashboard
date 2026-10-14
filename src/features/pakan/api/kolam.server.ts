@@ -18,6 +18,7 @@ import type {
   DadakanQuery,
   FastingOverrideInput,
   FastingOverrideItem,
+  PondDayWrite,
   BiomassSeries,
   KolamCycle,
   KolamPondLink,
@@ -41,6 +42,27 @@ export class KolamError extends Error {
 const NOT_FOUND = 'Kolam tidak ditemukan.'
 const OVERRIDE_NOT_FOUND = 'Puasa dadakan tidak ditemukan.'
 const ALREADY_ENDED = 'Puasa dadakan ini sudah diakhiri.'
+const DATE_TAKEN = 'Tanggal ini sudah punya catatan.'
+const DAY_MISSING = 'Catatan harian untuk tanggal ini tidak ada.'
+const NO_FEED = 'Kolam ini belum punya pakan.'
+const DAY_CONFLICT = 'Catatan harian bentrok. Coba lagi.'
+
+function decimal(value: number | null, digits: number) {
+  if (value == null) return null
+  return value.toFixed(digits)
+}
+
+function prismaErrorCode(error: unknown) {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'code' in error &&
+    typeof error.code === 'string'
+  ) {
+    return error.code
+  }
+  return undefined
+}
 
 function asNumber(value: { toString: () => string } | null): number | null {
   if (value == null) return null
@@ -380,4 +402,103 @@ export async function revokeFastingOverride(id: string, userId: string) {
     where: { id },
     data: { revokedAt: new Date(), revokedById: userId },
   })
+}
+
+/**
+ * Writes the day's inputs. Deaths and actual feed replace that date's total
+ * instead of appending another event. Derived columns are not stored.
+ */
+export async function upsertPondDay(input: PondDayWrite, userId: string) {
+  const observedOn = new Date(`${input.date}T00:00:00.000Z`)
+  const dayStart = jakartaDayStart(input.date)
+  const dayEnd = jakartaDayStart(addDays(input.date, 1))
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const cycle = await tx.batchPond.findUnique({
+        where: { id: input.batchPondId },
+        select: { id: true, feedId: true },
+      })
+      if (!cycle) throw new KolamError(NOT_FOUND)
+
+      const feedId = cycle.feedId
+      if (input.actualFeedGrams > 0 && feedId == null) {
+        throw new KolamError(NO_FEED)
+      }
+
+      const records = await tx.pondDailyRecord.findMany({
+        where: { batchPondId: cycle.id },
+        select: { id: true, doc: true, observedOn: true },
+      })
+      const existing = records.find(
+        (record) =>
+          record.observedOn != null &&
+          formatJakartaDate(record.observedOn) === input.date,
+      )
+      if (input.create && existing) throw new KolamError(DATE_TAKEN)
+      if (!input.create && !existing) throw new KolamError(DAY_MISSING)
+
+      const snapshot = {
+        averageWeightGrams: decimal(input.averageWeightGrams, 3),
+        frMin: decimal(input.frMin, 4),
+        frMax: decimal(input.frMax, 4),
+      }
+      if (existing) {
+        await tx.pondDailyRecord.update({
+          where: { id: existing.id },
+          data: snapshot,
+        })
+      } else {
+        const doc =
+          records.reduce((max, record) => Math.max(max, record.doc), 0) + 1
+        await tx.pondDailyRecord.create({
+          data: {
+            batchPondId: cycle.id,
+            doc,
+            observedOn,
+            ...snapshot,
+          },
+        })
+      }
+
+      await tx.mortalityEvent.deleteMany({
+        where: {
+          batchPondId: cycle.id,
+          occurredAt: { gte: dayStart, lt: dayEnd },
+        },
+      })
+      if (input.deaths > 0) {
+        await tx.mortalityEvent.create({
+          data: {
+            batchPondId: cycle.id,
+            quantity: input.deaths,
+            occurredAt: dayStart,
+            userId,
+          },
+        })
+      }
+
+      await tx.feedApplication.deleteMany({
+        where: {
+          batchPondId: cycle.id,
+          occurredAt: { gte: dayStart, lt: dayEnd },
+        },
+      })
+      if (input.actualFeedGrams > 0 && feedId != null) {
+        await tx.feedApplication.create({
+          data: {
+            batchPondId: cycle.id,
+            feedId,
+            quantityGrams: input.actualFeedGrams,
+            occurredAt: dayStart,
+            userId,
+          },
+        })
+      }
+    })
+  } catch (error) {
+    if (error instanceof KolamError) throw error
+    if (prismaErrorCode(error) === 'P2002') throw new KolamError(DAY_CONFLICT)
+    throw error
+  }
 }
