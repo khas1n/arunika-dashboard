@@ -36,9 +36,11 @@ pnpm dev
 
 Open http://localhost:3000 and sign in with `SEED_ADMIN_USERNAME` (default `admin`) and the password you set. Email stays on the account (`SEED_ADMIN_EMAIL`) and is not the login field.
 
-`pnpm db:migrate` on a fresh database creates the tables. A later schema change uses the same command with a name: `pnpm exec prisma migrate dev --name <change>`.
+`pnpm db:migrate` on a fresh database creates the tables. The fish-species migration inserts Nila (`NILA`) and Biofloc (`BIOFLOC`) when those codes are missing, points every existing cycle at them, then makes the foreign keys required. A later schema change uses the same command with a name: `pnpm exec prisma migrate dev --name <change>`.
 
-Optional: load BATCH 1 from the Pakan workbook with `pnpm db:import`. Re-running replaces BATCH 1 cycles. It keeps ponds, feed names, and the administrator, and it does not write puasa dadakan.
+Add another species or method with a new `code` on `fish_species` or `cultivation_method`. The Kolam header shows the name from that row.
+
+Optional: load BATCH 1 from the Pakan workbook with `pnpm db:import`. Re-running replaces BATCH 1 cycles and sets each one to Nila and Biofloc. It keeps ponds, feed names, species, methods, and the administrator, and it does not write puasa dadakan.
 
 ## Environment
 
@@ -61,29 +63,29 @@ Optional: load BATCH 1 from the Pakan workbook with `pnpm db:import`. Re-running
 
 ## Scripts
 
-| Script                 | What it does                                          |
-| ---------------------- | ----------------------------------------------------- |
-| `pnpm dev`             | Dev server on port 3000                               |
-| `pnpm build`           | Production build into `.output`                       |
-| `pnpm start`           | Run `node .output/server/index.mjs`                   |
-| `pnpm preview`         | Vite preview                                          |
-| `pnpm typecheck`       | `tsc --noEmit`                                        |
-| `pnpm lint`            | ESLint                                                |
-| `pnpm format`          | Prettier, then ESLint fix                             |
-| `pnpm check`           | Prettier check                                        |
-| `pnpm generate-routes` | Regenerate `src/routeTree.gen.ts`                     |
-| `pnpm storybook`       | Storybook on port 6006                                |
-| `pnpm build-storybook` | Static Storybook build                                |
-| `pnpm test:stories`    | Run stories in a headless browser                     |
-| `pnpm db:up`           | Start Postgres (`docker compose up -d db`)            |
-| `pnpm db:down`         | Stop Compose services                                 |
-| `pnpm db:generate`     | Generate the Prisma client                            |
-| `pnpm db:migrate`      | Create and apply a dev migration                      |
-| `pnpm db:deploy`       | Apply committed migrations (`migrate deploy`)         |
-| `pnpm db:studio`       | Prisma Studio                                         |
-| `pnpm db:seed`         | Create or update the administrator                    |
-| `pnpm db:import`       | Load BATCH 1 from the workbook. Replaces those cycles |
-| `pnpm user:create`     | Add a user who can sign in                            |
+| Script                 | What it does                                                                                  |
+| ---------------------- | --------------------------------------------------------------------------------------------- |
+| `pnpm dev`             | Dev server on port 3000                                                                       |
+| `pnpm build`           | Production build into `.output`                                                               |
+| `pnpm start`           | Run `node .output/server/index.mjs`                                                           |
+| `pnpm preview`         | Vite preview                                                                                  |
+| `pnpm typecheck`       | `tsc --noEmit`                                                                                |
+| `pnpm lint`            | ESLint                                                                                        |
+| `pnpm format`          | Prettier, then ESLint fix                                                                     |
+| `pnpm check`           | Prettier check                                                                                |
+| `pnpm generate-routes` | Regenerate `src/routeTree.gen.ts`                                                             |
+| `pnpm storybook`       | Storybook on port 6006                                                                        |
+| `pnpm build-storybook` | Static Storybook build                                                                        |
+| `pnpm test:stories`    | Run stories in a headless browser                                                             |
+| `pnpm db:up`           | Start Postgres (`docker compose up -d db`)                                                    |
+| `pnpm db:down`         | Stop Compose services                                                                         |
+| `pnpm db:generate`     | Generate the Prisma client                                                                    |
+| `pnpm db:migrate`      | Create and apply a dev migration                                                              |
+| `pnpm db:deploy`       | Apply committed migrations (`migrate deploy`)                                                 |
+| `pnpm db:studio`       | Prisma Studio                                                                                 |
+| `pnpm db:seed`         | Upsert Nila (`NILA`) and Biofloc (`BIOFLOC`) by code, then create or update the administrator |
+| `pnpm db:import`       | Load BATCH 1 from the workbook. Replaces those cycles                                         |
+| `pnpm user:create`     | Add a user who can sign in                                                                    |
 
 Husky runs commitlint on `commit-msg`. Messages follow Conventional Commits (`@commitlint/config-conventional`).
 

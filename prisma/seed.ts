@@ -29,6 +29,25 @@ async function main() {
   const passwordHash = await hashPassword(password)
   const now = new Date()
 
+  await prisma.fishSpecies.upsert({
+    where: { code: 'NILA' },
+    update: {
+      name: 'Nila',
+      scientificName: 'Oreochromis niloticus',
+      active: true,
+    },
+    create: {
+      code: 'NILA',
+      name: 'Nila',
+      scientificName: 'Oreochromis niloticus',
+    },
+  })
+  await prisma.cultivationMethod.upsert({
+    where: { code: 'BIOFLOC' },
+    update: { name: 'Biofloc', active: true },
+    create: { code: 'BIOFLOC', name: 'Biofloc' },
+  })
+
   const user = await prisma.user.upsert({
     where: { email },
     update: { name, username, updatedAt: now },

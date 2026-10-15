@@ -12,7 +12,9 @@ import { PrismaClient } from '../src/generated/prisma/client.js'
  * Actual feed is only a typed column T on that pond's sheet. Column I is
  * recommended feed and is never stored. Puasa dadakan is not in the workbook,
  * so this script writes no FastingOverride rows. Re-running replaces the
- * BATCH 1 cycles and keeps ponds, feeds, and the admin user.
+ * BATCH 1 cycles and keeps ponds, feeds, species, methods, and the admin user.
+ * Every recreated cycle is Nila grown with Biofloc, the only rows this farm
+ * has today. Those rows are master data, looked up by code.
  */
 
 const BATCH_NAME = 'BATCH 1'
@@ -581,6 +583,24 @@ async function main() {
         treatmentIds.get('MOLASE') ?? fail('Treatment MOLASE tidak ada')
       const basilusId =
         treatmentIds.get('BASILUS') ?? fail('Treatment BASILUS tidak ada')
+      const species = await tx.fishSpecies.upsert({
+        where: { code: 'NILA' },
+        update: {
+          name: 'Nila',
+          scientificName: 'Oreochromis niloticus',
+          active: true,
+        },
+        create: {
+          code: 'NILA',
+          name: 'Nila',
+          scientificName: 'Oreochromis niloticus',
+        },
+      })
+      const method = await tx.cultivationMethod.upsert({
+        where: { code: 'BIOFLOC' },
+        update: { name: 'Biofloc', active: true },
+        create: { code: 'BIOFLOC', name: 'Biofloc' },
+      })
 
       for (const pond of ponds) {
         const feedId =
@@ -591,6 +611,8 @@ async function main() {
             pondId:
               pondIds.get(pond.code) ?? fail(`Kolam ${pond.code} tidak ada`),
             feedId,
+            fishSpeciesId: species.id,
+            cultivationMethodId: method.id,
             plannedSeedCount: pond.plannedSeedCount,
             volumeM3: decimalString(pond.volumeM3, 2),
             plannedFeedDayCount: pond.plannedPuasa?.feed ?? null,

@@ -15,7 +15,7 @@ The request for a page: `pageIndex` (zero-based), `pageSize` (1–100), `sortId`
 One paged Kolam read. The pond screen uses a separate list for each of these:
 
 - ponds (the sidebar)
-- pond header (asal bibit, volume, puasa, pakan, FCR) — a page of one row
+- pond header (asal bibit, volume, puasa, pakan, jenis ikan, metode budidaya, FCR) — a page of one row
 - today's bibis for that pond
 - puasa dadakan for that pond, including ended rows. Default sort is active first, then ended. Sorting by start date or reason mixes the two. Akhiri is only on an active row.
 - daily log for that pond, sortable by every visible column, defaulting to date ascending
@@ -24,9 +24,17 @@ The pond list has one sort: batch order A3, B3, C3, D3, A6, B6, C6, D6.
 
 The pond screen shows one tab at a time. The title is on the left, and Harian and Puasa sit under it. Bibis stays visible on both tabs. Harian is the pond facts, the biomass series, and the daily log. Catat harian sits on the right when Harian is selected. Puasa is puasa dadakan, and Catat puasa dadakan sits on the right. Another workbook sheet can become another tab later.
 
+## Jenis ikan
+
+The fish a cycle grows. One `FishSpecies` row, looked up by `code`. The first row is `NILA`, shown as Nila. Another species is another row, not a schema change. The physical pond does not store this. The next batch on that pond can point at a different row.
+
+## Metode budidaya
+
+How a cycle is grown. One `CultivationMethod` row, looked up by `code`. The first row is `BIOFLOC`, shown as Biofloc. Another method is another row. The spelling in the database and on the screen is Biofloc.
+
 ## Harian input
 
-A Harian cell edit sets that day's inputs, and the derived columns are computed again. Deaths and actual feed replace that date's total.
+A Harian cell edit sets that day's inputs. The whole cell accepts the click, including an empty cell. Enter or Simpan commits. Escape or Batal restores the previous value. The typed value shows immediately. Populasi, biomassa, pakan hitung, pakan operasional, and FCR stay as they are until the server computes them again. Deaths and actual feed replace that date's total.
 
 Creating or ending a puasa dadakan is not a list.
 

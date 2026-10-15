@@ -46,10 +46,10 @@ Screen copy is Indonesian today. Translations are planned.
 
 - Sign in with a username and password. Public sign-up is off. The first account comes from the database seed. Further accounts are created with `pnpm user:create`.
 - Beranda: see how many users and unexpired sessions exist, and manage jenis pakan (create, rename, delete only when the feed is unused).
-- Kolam: open a pond in batch order (A3, B3, C3, D3, A6, B6, C6, D6). Harian shows cycle facts, a biomass line for the whole cycle, and a paged daily log. Catat harian adds a day. Berat, FR, kematian, and pakan aktual can be edited in the cells. Puasa shows puasa dadakan, including ended rows, and can record or end an active one. Bibis for today stays visible on both tabs.
+- Kolam: open a pond in batch order (A3, B3, C3, D3, A6, B6, C6, D6). Harian shows cycle facts, including jenis ikan and metode budidaya, a biomass line for the whole cycle, and a paged daily log. Catat harian adds a day. Berat, FR, kematian, and pakan aktual can be edited in the cells. Puasa shows puasa dadakan, including ended rows, and can record or end an active one. Bibis for today stays visible on both tabs.
 - Profil: the signed-in account. Pengaturan: theme and sidebar, stored in the browser.
 
-History for BATCH 1 is loaded by `pnpm db:import` from the Pakan workbook. Re-running that command replaces BATCH 1 cycles. It does not write puasa dadakan. Ponds, feed names, and the administrator account stay.
+History for BATCH 1 is loaded by `pnpm db:import` from the Pakan workbook. Re-running that command replaces BATCH 1 cycles. It does not write puasa dadakan. Ponds, feed names, fish species, cultivation methods, and the administrator account stay. BATCH 1 cycles are Nila grown with Biofloc.
 
 ## Domain rules already in force
 

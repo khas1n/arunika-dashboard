@@ -146,6 +146,35 @@ model Treatment {
   @@map("treatment")
 }
 
+model FishSpecies {
+  id             String   @id @default(cuid())
+  code           String   @unique
+  name           String
+  scientificName String?
+  description    String?
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  batchPonds BatchPond[]
+
+  @@map("fish_species")
+}
+
+model CultivationMethod {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  batchPonds BatchPond[]
+
+  @@map("cultivation_method")
+}
+
 model FeedingRateBand {
   id             String   @id @default(cuid())
   minWeightGrams Decimal  @unique @db.Decimal(10, 3)
@@ -173,6 +202,8 @@ model BatchPond {
   batchId             String
   pondId              String
   feedId              String?
+  fishSpeciesId       String
+  cultivationMethodId String
   plannedSeedCount    Int?
   volumeM3            Decimal? @db.Decimal(8, 2)
   plannedFeedDayCount Int?
@@ -187,9 +218,11 @@ model BatchPond {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
-  batch Batch @relation(fields: [batchId], references: [id])
-  pond  Pond  @relation(fields: [pondId], references: [id])
-  feed  Feed? @relation(fields: [feedId], references: [id])
+  batch             Batch             @relation(fields: [batchId], references: [id])
+  pond              Pond              @relation(fields: [pondId], references: [id])
+  feed              Feed?             @relation(fields: [feedId], references: [id])
+  fishSpecies       FishSpecies       @relation(fields: [fishSpeciesId], references: [id])
+  cultivationMethod CultivationMethod @relation(fields: [cultivationMethodId], references: [id])
 
   treatments       BatchPondTreatment[]
   fastingPatterns  PondFastingPattern[]
@@ -204,6 +237,8 @@ model BatchPond {
   @@unique([batchId, pondId])
   @@index([pondId])
   @@index([feedId])
+  @@index([fishSpeciesId])
+  @@index([cultivationMethodId])
   @@map("batch_pond")
 }
 

@@ -18,7 +18,7 @@ There is one kind of account. Anyone who can sign in can do the same work. Scree
 
 - Sign in with a username and password. Email is stored on the account and is not the login field. Public sign-up is disabled. The first administrator is created by the database seed.
 - Beranda shows user and active-session counts, and the jenis pakan list. A feed that is already used cannot be deleted.
-- Kolam opens each pond in batch order. Harian shows cycle facts, a biomass line for the whole cycle, and a paged daily log. Puasa records and ends puasa dadakan. Today's bibis stays visible on both tabs.
+- Kolam opens each pond in batch order. Harian shows cycle facts, including the fish species and cultivation method, a biomass line for the whole cycle, and a paged daily log. Puasa records and ends puasa dadakan. Today's bibis stays visible on both tabs.
 - Profil shows the session. Pengaturan stores theme and sidebar in the browser.
 - BATCH 1 history is loaded with `pnpm db:import` from the Pakan workbook. That script is not an upload screen.
 
@@ -84,7 +84,7 @@ Environment variables, every script, deployment, and troubleshooting are in [doc
 | `pnpm lint` / `pnpm check`                        | ESLint, and Prettier check                             |
 | `pnpm test:stories`                               | Stories in a headless browser                          |
 | `pnpm storybook`                                  | Storybook on port 6006                                 |
-| `pnpm db:up` / `pnpm db:migrate` / `pnpm db:seed` | Postgres, schema, administrator                        |
+| `pnpm db:up` / `pnpm db:migrate` / `pnpm db:seed` | Postgres, schema, Nila, Biofloc, administrator         |
 | `pnpm db:import`                                  | Load BATCH 1. Replaces those cycles                    |
 | `pnpm user:create`                                | Add a user who can sign in                             |
 

@@ -20,6 +20,8 @@ erDiagram
   Batch ||--o{ BatchPond : has
   Pond ||--o{ BatchPond : used_in
   Feed ||--o{ BatchPond : default_feed
+  FishSpecies ||--o{ BatchPond : grown
+  CultivationMethod ||--o{ BatchPond : grown_with
   BatchPond ||--o{ PondFastingPattern : has
   BatchPond ||--o{ FastingOverride : has
   BatchPond ||--o{ BibisRecord : has
@@ -46,17 +48,19 @@ erDiagram
 
 ### Reference and master data
 
-| Model             | Purpose                           | Key fields                                                                                                      |
-| ----------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `Batch`           | One production batch              | `name` unique, `molassesCarbonFraction` (0.37), `plannedSeedWeightGrams` (1000/60), `bibisLeadDays` (default 2) |
-| `Pond`            | A physical pond                   | `code` unique (`A3` to `D6`), `name` (`D3 (Heru)`)                                                              |
-| `Feed`            | Jenis pakan                       | `name` unique (`Safir`, `781`). No stock columns                                                                |
-| `SeedSource`      | Asal bibit                        | `name` unique                                                                                                   |
-| `Treatment`       | Treatment master                  | `code` unique, `name` unique. Rows: `MOLASE`, `GOS_STRONG`, `AQUA_CELL`, `BASILUS`                              |
-| `FeedingRateBand` | Feeding-rate table from Referensi | min and max weight, `frMin`, `frMax`. Unique on min weight                                                      |
-| `FeedAdditive`    | Additive doses from Referensi     | `name` unique, `gramsPerFeedGram`                                                                               |
+| Model               | Purpose                           | Key fields                                                                                                                   |
+| ------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `Batch`             | One production batch              | `name` unique, `molassesCarbonFraction` (0.37), `plannedSeedWeightGrams` (1000/60), `bibisLeadDays` (default 2)              |
+| `Pond`              | A physical pond                   | `code` unique (`A3` to `D6`), `name` (`D3 (Heru)`)                                                                           |
+| `Feed`              | Jenis pakan                       | `name` unique (`Safir`, `781`). No stock columns                                                                             |
+| `SeedSource`        | Asal bibit                        | `name` unique                                                                                                                |
+| `Treatment`         | Treatment master                  | `code` unique, `name` unique. Rows: `MOLASE`, `GOS_STRONG`, `AQUA_CELL`, `BASILUS`                                           |
+| `FishSpecies`       | Jenis ikan                        | `code` unique, `name`, optional `scientificName`, `description`, `active`. First row: `NILA` (Nila, _Oreochromis niloticus_) |
+| `CultivationMethod` | Metode budidaya                   | `code` unique, `name`, optional `description`, `active`. First row: `BIOFLOC` (Biofloc)                                      |
+| `FeedingRateBand`   | Feeding-rate table from Referensi | min and max weight, `frMin`, `frMax`. Unique on min weight                                                                   |
+| `FeedAdditive`      | Additive doses from Referensi     | `name` unique, `gramsPerFeedGram`                                                                                            |
 
-Treatment names are data, so no screen needs them hard-coded. The master rows are not created by this step. They are created later by a seed or an admin screen.
+Treatment, species, and method names are data, so no screen needs them hard-coded. Treatment rows are written by the import. `NILA` and `BIOFLOC` are inserted by the migration and upserted by the seed and the import.
 
 ### Cycle
 
@@ -70,7 +74,11 @@ Konfigurasi is the plan, and the pond header is what the log used. They disagree
 | Volume                | `volumeM3` (28 for A6 to D6)   | none, the plan value is the confirmed value  |
 | Feeding and fast days | `PondFastingPattern`           | `plannedFeedDayCount`, `plannedFastDayCount` |
 
-Other cycle fields: `feedId` (default feed), `densityPerM3`, `aeratorType`, `probiotic` (free text, because the sheet's probiotic values are not treatments), `proteinFraction`, `carbonFraction`, `nitrogenFraction` (typed on each pond header, so they belong to the cycle and not to `Feed`), and `notes`.
+Other cycle fields: `feedId` (default feed), `fishSpeciesId`, `cultivationMethodId`, `densityPerM3`, `aeratorType`, `probiotic` (free text, because the sheet's probiotic values are not treatments), `proteinFraction`, `carbonFraction`, `nitrogenFraction` (typed on each pond header, so they belong to the cycle and not to `Feed`), and `notes`.
+
+Species and method belong on the cycle, not on the physical pond. The next batch can grow a different fish or use a different method, and an old cycle keeps the rows it was stocked with. Both foreign keys are required. The migration inserts `NILA` and `BIOFLOC` if those codes are missing, fills every existing cycle from those codes, then makes the columns required. `pnpm db:seed` upserts the same codes and does not add a second row. `pnpm db:import` does the same before it recreates BATCH 1, because a cycle cannot be saved without them.
+
+Add another species or method by inserting a row with a new `code`. The Kolam header reads the names from those rows. The names are not hard-coded in the screen.
 
 `BatchPondTreatment` lists which treatments the plan uses on a cycle. It replaces the Molase and Basilus yes/no columns. Unique on `(batchPondId, treatmentId)`.
 
