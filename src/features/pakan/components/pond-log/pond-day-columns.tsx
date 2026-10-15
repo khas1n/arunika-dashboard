@@ -22,52 +22,54 @@ export const pondDayColumns = column.columns([
   }),
   column.accessor('averageWeightGrams', {
     header: 'Berat (g)',
-    cell: ({ row, getValue }) => (
+    cell: ({ row }) => (
       <DayNumberCell
         day={row.original}
         field="averageWeightGrams"
         label="Berat"
-        text={formatQuantity(getValue())}
+        format={formatQuantity}
         fractionDigits={3}
       />
     ),
   }),
   column.accessor('frMin', {
     header: 'FR min',
-    cell: ({ row, getValue }) => (
+    cell: ({ row }) => (
       <DayNumberCell
         day={row.original}
         field="frMin"
         label="FR min"
-        text={formatPercent(getValue())}
+        format={formatPercent}
         fractionDigits={2}
         scale={100}
         max={100}
+        suffix="%"
       />
     ),
   }),
   column.accessor('frMax', {
     header: 'FR max',
-    cell: ({ row, getValue }) => (
+    cell: ({ row }) => (
       <DayNumberCell
         day={row.original}
         field="frMax"
         label="FR max"
-        text={formatPercent(getValue())}
+        format={formatPercent}
         fractionDigits={2}
         scale={100}
         max={100}
+        suffix="%"
       />
     ),
   }),
   column.accessor('deaths', {
     header: 'Kematian',
-    cell: ({ row, getValue }) => (
+    cell: ({ row }) => (
       <DayNumberCell
         day={row.original}
         field="deaths"
         label="Kematian"
-        text={formatGrams(getValue())}
+        format={formatGrams}
         emptyValue={0}
       />
     ),
@@ -90,12 +92,12 @@ export const pondDayColumns = column.columns([
   }),
   column.accessor('actualFeedGrams', {
     header: 'Pakan aktual (g)',
-    cell: ({ row, getValue }) => (
+    cell: ({ row }) => (
       <DayNumberCell
         day={row.original}
         field="actualFeedGrams"
         label="Pakan aktual"
-        text={formatGrams(getValue())}
+        format={formatGrams}
         emptyValue={0}
       />
     ),

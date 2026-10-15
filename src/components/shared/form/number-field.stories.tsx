@@ -10,6 +10,7 @@ interface PreviewProps {
   scale?: number
   emptyValue?: number | null
   max?: number
+  suffix?: string
   initial?: number | null
 }
 
@@ -19,6 +20,7 @@ const Preview: FC<PreviewProps> = ({
   scale,
   emptyValue,
   max,
+  suffix,
   initial = null,
 }) => {
   const form = useAppForm({
@@ -41,6 +43,7 @@ const Preview: FC<PreviewProps> = ({
             scale={scale}
             emptyValue={emptyValue}
             max={max}
+            suffix={suffix}
           />
         )}
       </form.AppField>
@@ -93,10 +96,12 @@ export const Percent: Story = {
       fractionDigits={2}
       scale={100}
       max={100}
+      suffix="%"
       initial={0.04}
     />
   ),
   play: async ({ canvas }) => {
     await expect(canvas.getByLabelText('FR min (%)')).toHaveValue('4')
+    await expect(canvas.getByText('%')).toBeVisible()
   },
 }

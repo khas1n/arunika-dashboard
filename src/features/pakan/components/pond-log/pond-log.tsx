@@ -163,6 +163,11 @@ export const PondLog: FC<PondLogProps> = ({
               />
               <MetricCard label="Puasa" value={cycle.puasa ?? 'Belum diatur'} />
               <MetricCard label="Pakan" value={cycle.feedName ?? '—'} />
+              <MetricCard label="Jenis ikan" value={cycle.fishSpeciesName} />
+              <MetricCard
+                label="Metode budidaya"
+                value={cycle.cultivationMethodName}
+              />
               <MetricCard label="FCR" value={formatFcr(cycle.fcr)} />
             </div>
             <BiomassChart pondCode={cycle.pondCode} points={series} />

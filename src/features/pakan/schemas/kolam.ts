@@ -134,6 +134,8 @@ export const kolamCycleSchema = z.object({
   volumeM3: z.number().nullable(),
   puasa: z.string().nullable(),
   feedName: z.string().nullable(),
+  fishSpeciesName: z.string(),
+  cultivationMethodName: z.string(),
   fcr: z.number().nullable(),
 })
 

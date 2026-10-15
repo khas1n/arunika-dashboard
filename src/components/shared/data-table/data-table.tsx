@@ -1023,7 +1023,7 @@ const DataTableRow: FC<DataTableRowProps> = ({
                   className: cn(
                     spansRows
                       ? 'align-top whitespace-normal'
-                      : 'overflow-hidden',
+                      : 'overflow-hidden has-[[data-editing]]:overflow-visible',
                     pinned &&
                       'sticky z-10 bg-background data-pinned:bg-background',
                     bound.getIsSelected() && 'bg-secondary',

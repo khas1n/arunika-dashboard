@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { FC } from 'react'
+import type { FC, FocusEvent, FormEvent } from 'react'
 import {
   maskitoNumber,
   maskitoParseNumber,
@@ -9,6 +9,12 @@ import type { MaskitoNumberParams } from '@maskito/kit'
 import { useMaskito } from '@maskito/react'
 import { Field, FieldError, FieldLabel } from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
+} from '#/components/ui/input-group'
 import { useFieldContext } from '#/components/shared/form/form-context'
 import { toFieldErrors } from '#/lib/form-errors'
 import { cn } from '#/lib/utils'
@@ -33,6 +39,10 @@ interface NumberFieldProps {
   autoFocus?: boolean
   disabled?: boolean
   className?: string
+  /** Cell editor: no label, no error line, height comes from the parent. */
+  compact?: boolean
+  suffix?: string
+  selectOnFocus?: boolean
 }
 
 function storedDigits(fractionDigits: number, scale: number) {
@@ -56,9 +66,14 @@ export const NumberField: FC<NumberFieldProps> = ({
   autoFocus = false,
   disabled = false,
   className,
+  compact = false,
+  suffix,
+  selectOnFocus = false,
 }) => {
   const field = useFieldContext<number | null>()
-  const invalid = field.state.meta.isTouched && !field.state.meta.isValid
+  const invalid = compact
+    ? field.state.meta.errors.length > 0
+    : field.state.meta.isTouched && !field.state.meta.isValid
   const digits = storedDigits(fractionDigits, scale)
   const params = useMemo<MaskitoNumberParams>(
     () => ({
@@ -78,33 +93,73 @@ export const NumberField: FC<NumberFieldProps> = ({
   const defaultValue =
     initial == null ? '' : maskitoStringifyNumber(initial * scale, params)
 
+  const onFocus = (event: FocusEvent<HTMLInputElement>) => {
+    if (selectOnFocus) event.currentTarget.select()
+  }
+
+  const onInput = (event: FormEvent<HTMLInputElement>) => {
+    const text = event.currentTarget.value.trim()
+    if (text === '' || text === DECIMAL_SEPARATOR) {
+      field.handleChange(emptyValue)
+      return
+    }
+    const parsed = maskitoParseNumber(text, params)
+    if (!Number.isFinite(parsed)) return
+    field.handleChange(roundTo(parsed / scale, digits))
+  }
+
+  const shared = {
+    ref: inputRef,
+    id: compact ? undefined : field.name,
+    name: field.name,
+    inputMode: fractionDigits === 0 ? 'numeric' : 'decimal',
+    autoComplete: 'off',
+    autoFocus,
+    disabled,
+    defaultValue,
+    'aria-label': label ? undefined : ariaLabel,
+    'aria-invalid': invalid || undefined,
+    onBlur: field.handleBlur,
+    onFocus,
+    onInput,
+  } as const
+
+  const control = suffix ? (
+    <InputGroupInput {...shared} className={cn(compact && 'h-full px-2')} />
+  ) : (
+    <Input
+      {...shared}
+      className={cn(
+        compact &&
+          'h-full rounded-none border-0 bg-transparent px-2 shadow-none focus-visible:ring-0 dark:bg-transparent',
+        className,
+      )}
+    />
+  )
+
+  const fieldControl = suffix ? (
+    <InputGroup
+      className={cn(
+        compact &&
+          'h-full rounded-none border-0 bg-transparent shadow-none has-[[data-slot=input-group-control]:focus-visible]:border-0 has-[[data-slot=input-group-control]:focus-visible]:ring-0 has-[[data-slot][aria-invalid=true]]:border-0 has-[[data-slot][aria-invalid=true]]:ring-0 dark:bg-transparent dark:has-[[data-slot][aria-invalid=true]]:ring-0',
+        className,
+      )}
+    >
+      {control}
+      <InputGroupAddon align="inline-end" className={cn(compact && 'pr-2')}>
+        <InputGroupText>{suffix}</InputGroupText>
+      </InputGroupAddon>
+    </InputGroup>
+  ) : (
+    control
+  )
+
+  if (compact) return fieldControl
+
   return (
     <Field data-invalid={invalid || undefined}>
       {label ? <FieldLabel htmlFor={field.name}>{label}</FieldLabel> : null}
-      <Input
-        ref={inputRef}
-        id={field.name}
-        name={field.name}
-        className={cn(className)}
-        inputMode={fractionDigits === 0 ? 'numeric' : 'decimal'}
-        autoComplete="off"
-        autoFocus={autoFocus}
-        disabled={disabled}
-        defaultValue={defaultValue}
-        aria-label={label ? undefined : ariaLabel}
-        aria-invalid={invalid || undefined}
-        onBlur={field.handleBlur}
-        onInput={(event) => {
-          const text = event.currentTarget.value.trim()
-          if (text === '' || text === DECIMAL_SEPARATOR) {
-            field.handleChange(emptyValue)
-            return
-          }
-          const parsed = maskitoParseNumber(text, params)
-          if (!Number.isFinite(parsed)) return
-          field.handleChange(roundTo(parsed / scale, digits))
-        }}
-      />
+      {fieldControl}
       <FieldError errors={toFieldErrors(field.state.meta.errors)} />
     </Field>
   )

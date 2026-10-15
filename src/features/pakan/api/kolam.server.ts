@@ -160,6 +160,8 @@ function toCycle(cycle: BuiltCycle): KolamCycle {
     volumeM3: cycle.volumeM3,
     puasa: cycle.puasa,
     feedName: cycle.feedName,
+    fishSpeciesName: cycle.fishSpeciesName,
+    cultivationMethodName: cycle.cultivationMethodName,
     fcr: cycle.fcr,
   }
 }
@@ -211,6 +213,8 @@ function sumOn(
 const cycleInclude = {
   pond: true,
   feed: true,
+  fishSpecies: true,
+  cultivationMethod: true,
   fastingPatterns: true,
   fastingOverrides: { orderBy: { startsAt: 'asc' as const } },
   stockings: {
@@ -315,6 +319,8 @@ async function loadBuilt() {
       volumeM3: asNumber(cycle.volumeM3),
       puasa: pattern ? `${pattern.feedDayCount}:${pattern.fastDayCount}` : null,
       feedName: cycle.feed?.name ?? null,
+      fishSpeciesName: cycle.fishSpecies.name,
+      cultivationMethodName: cycle.cultivationMethod.name,
       fcr: feedConversionRatio(
         totalActual,
         summary.initialBiomassGrams,
