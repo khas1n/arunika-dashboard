@@ -1,5 +1,6 @@
 import { createFormHook } from '@tanstack/react-form'
 import { CheckboxField } from '#/components/shared/form/checkbox-field'
+import { DateField } from '#/components/shared/form/date-field'
 import {
   fieldContext,
   formContext,
@@ -14,6 +15,7 @@ export const { useAppForm } = createFormHook({
   formContext,
   fieldComponents: {
     CheckboxField,
+    DateField,
     NumberField,
     PasswordField,
     TextareaField,

@@ -1,4 +1,5 @@
 export { CheckboxField } from '#/components/shared/form/checkbox-field'
+export { DateField } from '#/components/shared/form/date-field'
 export { FormError } from '#/components/shared/form/form-error'
 export { useFieldContext } from '#/components/shared/form/form-context'
 export { NumberField } from '#/components/shared/form/number-field'
