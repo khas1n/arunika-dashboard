@@ -146,8 +146,14 @@ export const RecordsDadakan: Story = {
     await userEvent.click(
       canvas.getByRole('button', { name: 'Catat puasa dadakan' }),
     )
-    await userEvent.type(screen.getByLabelText('Hari pertama'), '2026-10-10')
-    await userEvent.type(screen.getByLabelText('Hari terakhir'), '2026-10-12')
+    await userEvent.click(screen.getByRole('button', { name: 'Hari pertama' }))
+    await userEvent.click(
+      await screen.findByRole('button', { name: /10 Oktober 2026/ }),
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Hari terakhir' }))
+    await userEvent.click(
+      await screen.findByRole('button', { name: /12 Oktober 2026/ }),
+    )
     await userEvent.type(screen.getByLabelText('Alasan'), 'Hujan deras')
     await userEvent.click(screen.getByRole('button', { name: 'Simpan' }))
     await expect(args.onCreateOverride).toHaveBeenCalledWith({

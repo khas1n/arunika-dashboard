@@ -19,7 +19,10 @@ export const Default: Story = {}
 
 export const SavesInputs: Story = {
   play: async ({ args, canvas, userEvent }) => {
-    await userEvent.type(canvas.getByLabelText('Tanggal'), '2026-10-14')
+    await userEvent.click(canvas.getByRole('button', { name: 'Tanggal' }))
+    await userEvent.click(
+      await screen.findByRole('button', { name: /14 Oktober 2026/ }),
+    )
     await userEvent.type(canvas.getByLabelText('Berat (g)'), '30')
     await userEvent.type(canvas.getByLabelText('FR min (%)'), '4')
     await userEvent.type(canvas.getByLabelText('FR max (%)'), '5')

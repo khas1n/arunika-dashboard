@@ -6,13 +6,13 @@ import { TextField } from '#/components/shared/form/text-field'
 
 const Preview: FC = () => {
   const form = useAppForm({
-    defaultValues: { date: '2026-10-14' },
+    defaultValues: { name: 'Nila' },
   })
 
   return (
     <form className="grid max-w-xs gap-3">
-      <form.AppField name="date">
-        {(field) => <field.TextField label="Tanggal" type="date" />}
+      <form.AppField name="name">
+        {(field) => <field.TextField label="Nama" />}
       </form.AppField>
     </form>
   )
@@ -22,15 +22,15 @@ const meta = {
   title: 'Shared/Form/TextField',
   component: TextField,
   tags: ['autodocs'],
-  args: { label: 'Tanggal' },
+  args: { label: 'Nama' },
   render: () => <Preview />,
 } satisfies Meta<typeof TextField>
 
 export default meta
 type Story = StoryObj<typeof meta>
 
-export const Date: Story = {
+export const Default: Story = {
   play: async ({ canvas }) => {
-    await expect(canvas.getByLabelText('Tanggal')).toHaveValue('2026-10-14')
+    await expect(canvas.getByLabelText('Nama')).toHaveValue('Nila')
   },
 }

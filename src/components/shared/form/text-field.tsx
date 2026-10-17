@@ -13,7 +13,7 @@ import { toFieldErrors } from '#/lib/form-errors'
 interface TextFieldProps {
   label?: string
   description?: string
-  type?: 'text' | 'date' | 'password'
+  type?: 'text' | 'password'
   autoComplete?: string
 }
 

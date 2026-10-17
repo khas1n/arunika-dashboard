@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { FC } from 'react'
 import type { DateRange, Matcher } from '@daypicker/react'
-import { format, isSameDay } from 'date-fns'
+import { format, isSameDay, isValid, parse } from 'date-fns'
 import { id as dateLocale } from 'date-fns/locale'
 import { CalendarIcon, Check, XIcon } from 'lucide-react'
 import { Calendar } from '#/components/ui/calendar'
@@ -30,7 +30,7 @@ import { toFieldErrors } from '#/lib/form-errors'
 
 type DateFieldMode = 'single' | 'multiple' | 'range'
 
-type DateFieldValue = Date | null | Date[] | DateRange
+type DateFieldValue = Date | null | Date[] | DateRange | string
 
 interface DateFieldProps {
   label?: string
@@ -52,6 +52,22 @@ const placeholders: Record<DateFieldMode, string> = {
 
 function formatDate(date: Date) {
   return format(date, 'd MMM yyyy', { locale: dateLocale })
+}
+
+function parseCalendarDay(value: string) {
+  const date = parse(value, 'yyyy-MM-dd', new Date())
+  if (!isValid(date) || format(date, 'yyyy-MM-dd') !== value) return null
+  return date
+}
+
+function formatCalendarDay(date: Date) {
+  return format(date, 'yyyy-MM-dd')
+}
+
+function singleDate(value: DateFieldValue) {
+  if (value instanceof Date) return value
+  if (typeof value === 'string') return parseCalendarDay(value)
+  return null
 }
 
 function isRange(value: DateFieldValue): value is DateRange {
@@ -112,7 +128,8 @@ function selectionLabel(mode: DateFieldMode, value: DateFieldValue) {
     }
     return `${formatDate(value.from)} – ${formatDate(value.to)}`
   }
-  return value instanceof Date ? formatDate(value) : null
+  const date = singleDate(value)
+  return date ? formatDate(date) : null
 }
 
 type ConfirmMode = Exclude<DateFieldMode, 'single'>
@@ -122,7 +139,10 @@ function isConfirmMode(mode: DateFieldMode): mode is ConfirmMode {
   return mode !== 'single'
 }
 
-function draftFromValue(mode: ConfirmMode, value: DateFieldValue): ConfirmDraft {
+function draftFromValue(
+  mode: ConfirmMode,
+  value: DateFieldValue,
+): ConfirmDraft {
   if (mode === 'multiple') return Array.isArray(value) ? value : []
   return isRange(value) ? value : null
 }
@@ -229,7 +249,8 @@ export const DateField: FC<DateFieldProps> = ({
   }, [])
 
   const clear = () => {
-    field.handleChange(mode === 'multiple' ? [] : null)
+    const storedAsDay = typeof field.state.value === 'string'
+    field.handleChange(mode === 'multiple' ? [] : storedAsDay ? '' : null)
     setOpen(false)
   }
 
@@ -242,18 +263,31 @@ export const DateField: FC<DateFieldProps> = ({
   const calendar = (
     <DateFieldCalendar
       mode={mode}
-      value={isConfirmMode(mode) ? draft : field.state.value}
+      value={
+        isConfirmMode(mode)
+          ? draft
+          : typeof field.state.value === 'string'
+            ? parseCalendarDay(field.state.value)
+            : field.state.value
+      }
       disabledDates={disabledDates}
       timeZone={timeZone}
       startMonth={bounds.start}
       endMonth={bounds.end}
       onChange={(next) => {
         if (!isConfirmMode(mode)) {
-          field.handleChange(next)
+          const picked = next instanceof Date ? next : null
+          field.handleChange(
+            typeof field.state.value === 'string'
+              ? picked
+                ? formatCalendarDay(picked)
+                : ''
+              : picked,
+          )
           setOpen(false)
           return
         }
-        if (next instanceof Date) return
+        if (next instanceof Date || typeof next === 'string') return
         setDraft(next)
       }}
     />

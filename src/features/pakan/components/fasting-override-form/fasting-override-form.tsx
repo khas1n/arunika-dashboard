@@ -48,10 +48,10 @@ export const FastingOverrideForm: FC<FastingOverrideFormProps> = ({
       <FormError message={formError.message} />
       <FieldGroup>
         <form.AppField name="startsOn">
-          {(field) => <field.TextField label="Hari pertama" type="date" />}
+          {(field) => <field.DateField label="Hari pertama" />}
         </form.AppField>
         <form.AppField name="endsOn">
-          {(field) => <field.TextField label="Hari terakhir" type="date" />}
+          {(field) => <field.DateField label="Hari terakhir" />}
         </form.AppField>
         <form.AppField name="reason">
           {(field) => <field.TextField label="Alasan" />}

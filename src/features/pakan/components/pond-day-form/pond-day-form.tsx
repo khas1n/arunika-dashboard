@@ -44,7 +44,7 @@ export const PondDayForm: FC<PondDayFormProps> = ({ onSubmit, onCancel }) => {
       <FormError message={formError.message} />
       <FieldGroup className="gap-3">
         <form.AppField name="date">
-          {(field) => <field.TextField label="Tanggal" type="date" />}
+          {(field) => <field.DateField label="Tanggal" />}
         </form.AppField>
         <form.AppField name="averageWeightGrams">
           {(field) => (

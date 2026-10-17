@@ -101,6 +101,34 @@ async function pickDay(
   await user.click(await screen.findByRole('button', { name }))
 }
 
+const CalendarDayPreview: FC = () => {
+  const form = useAppForm({
+    defaultValues: { date: '' },
+  })
+  return (
+    <form className="grid max-w-xs gap-3">
+      <form.AppField name="date">
+        {(field) => <field.DateField label="Tanggal" />}
+      </form.AppField>
+      <form.Subscribe selector={(state) => state.values.date}>
+        {(date) => <output aria-label="Nilai">{date || 'kosong'}</output>}
+      </form.Subscribe>
+    </form>
+  )
+}
+
+export const CalendarDay: Story = {
+  render: () => <CalendarDayPreview />,
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.click(canvas.getByRole('button', { name: 'Tanggal' }))
+    await pickDay(userEvent, /20 Oktober 2026/)
+    await expect(
+      canvas.getByRole('button', { name: 'Tanggal' }),
+    ).toHaveTextContent('20 Okt 2026')
+    await expect(canvas.getByLabelText('Nilai')).toHaveTextContent('2026-10-20')
+  },
+}
+
 export const Single: Story = {
   play: async ({ canvas, userEvent }) => {
     await userEvent.click(canvas.getByRole('button', { name: 'Tanggal' }))
