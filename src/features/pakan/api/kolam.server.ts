@@ -19,7 +19,8 @@ import type {
   FastingOverrideInput,
   FastingOverrideItem,
   PondDayWrite,
-  BiomassSeries,
+  KolamChart,
+  KolamChartQuery,
   KolamCycle,
   KolamPondLink,
   PondDay,
@@ -122,20 +123,39 @@ export async function listKolamDays(
   return slicePage(days, query)
 }
 
-export async function listKolamBiomass(
-  pondCode: string,
-): Promise<BiomassSeries> {
-  const selected = (await loadBuilt()).cycles.find(
-    (cycle) => cycle.pondCode === pondCode,
-  )
-  const points = (selected?.days ?? []).flatMap((day) => {
-    if (day.date == null || day.biomassGrams == null) return []
-    return [{ date: day.date, biomassGrams: day.biomassGrams }]
+const chartInclude = {
+  dailyRecords: { orderBy: { doc: 'asc' as const } },
+  mortalityEvents: { select: { occurredAt: true, quantity: true } },
+  feedApplications: { select: { occurredAt: true, quantityGrams: true } },
+  stockings: {
+    select: { occurredOn: true, quantity: true },
+    orderBy: { occurredOn: 'asc' as const },
+  },
+  fastingPatterns: true,
+  fastingOverrides: { orderBy: { startsAt: 'asc' as const } },
+} as const
+
+export async function listKolamChart(
+  query: KolamChartQuery,
+): Promise<KolamChart> {
+  const cycle = await prisma.batchPond.findFirst({
+    where: { pond: { code: query.pondCode }, batch: { name: BATCH_NAME } },
+    include: chartInclude,
   })
-  points.sort((left, right) =>
-    left.date < right.date ? -1 : left.date > right.date ? 1 : 0,
-  )
-  return { pondCode, points }
+  if (!cycle) return { pondCode: query.pondCode, points: [] }
+  const points = cycleSummary(cycle).summary.rows.flatMap((day) => {
+    if (day.date == null) return []
+    if (query.from != null && day.date < query.from) return []
+    if (query.to != null && day.date > query.to) return []
+    return [
+      {
+        date: day.date,
+        biomassGrams: day.biomassGrams,
+        deaths: day.deaths,
+      },
+    ]
+  })
+  return { pondCode: query.pondCode, points }
 }
 
 export async function listKolamOverrides(
@@ -163,6 +183,7 @@ function toCycle(cycle: BuiltCycle): KolamCycle {
     fishSpeciesName: cycle.fishSpeciesName,
     cultivationMethodName: cycle.cultivationMethodName,
     fcr: cycle.fcr,
+    totalDeaths: cycle.totalDeaths,
   }
 }
 
@@ -197,6 +218,77 @@ function compareOverrides(
     return compareNullable(left.reason, right.reason, query.sortDesc)
   }
   return compareNullable(left.startsOn, right.startsOn, query.sortDesc)
+}
+
+function cycleSummary(cycle: {
+  dailyRecords: Array<{
+    doc: number
+    observedOn: Date | null
+    averageWeightGrams: { toString: () => string } | null
+    frMin: { toString: () => string } | null
+    frMax: { toString: () => string } | null
+  }>
+  mortalityEvents: Array<{ occurredAt: Date; quantity: number }>
+  feedApplications: Array<{ occurredAt: Date; quantityGrams: number }>
+  stockings: Array<{ occurredOn: Date; quantity: number }>
+  fastingPatterns: Array<{
+    feedDayCount: number
+    fastDayCount: number
+    anchorOn: Date
+    effectiveFrom: Date
+  }>
+  fastingOverrides: Array<{
+    startsAt: Date
+    endsAt: Date
+    reason: string
+    revokedAt: Date | null
+  }>
+}) {
+  const deaths = sumOn(cycle.mortalityEvents)
+  const actual = sumOn(
+    cycle.feedApplications.map((event) => ({
+      occurredAt: event.occurredAt,
+      quantity: event.quantityGrams,
+    })),
+  )
+  const sources: PondDaySource[] = cycle.dailyRecords.map((record) => {
+    const date = record.observedOn
+      ? formatJakartaDate(record.observedOn)
+      : null
+    return {
+      date,
+      doc: record.doc,
+      averageWeightGrams: asNumber(record.averageWeightGrams),
+      frMin: asNumber(record.frMin),
+      frMax: asNumber(record.frMax),
+      deaths: date == null ? 0 : (deaths.get(date) ?? 0),
+      actualFeedGrams: date == null ? 0 : (actual.get(date) ?? 0),
+    }
+  })
+  const stockings = cycle.stockings.map((stocking) => ({
+    occurredOn: formatJakartaDate(stocking.occurredOn),
+    quantity: stocking.quantity,
+  }))
+  const schedule = {
+    patterns: cycle.fastingPatterns.map((pattern) => ({
+      feedDayCount: pattern.feedDayCount,
+      fastDayCount: pattern.fastDayCount,
+      anchorOn: formatJakartaDate(pattern.anchorOn),
+      effectiveFrom: formatJakartaDate(pattern.effectiveFrom),
+    })),
+    overrides: cycle.fastingOverrides.map((override) => ({
+      startsAt: override.startsAt,
+      endsAt: override.endsAt,
+      reason: override.reason,
+      revokedAt: override.revokedAt,
+    })),
+  }
+  return {
+    summary: summarizePondCycle(sources, stockings, schedule),
+    sources,
+    stockings,
+    schedule,
+  }
 }
 
 function sumOn(
@@ -241,51 +333,7 @@ async function loadBuilt() {
   const cycles = sortPonds(batch.batchPonds)
 
   const built = cycles.map((cycle) => {
-    const deaths = sumOn(
-      cycle.mortalityEvents.map((event) => ({
-        occurredAt: event.occurredAt,
-        quantity: event.quantity,
-      })),
-    )
-    const actual = sumOn(
-      cycle.feedApplications.map((event) => ({
-        occurredAt: event.occurredAt,
-        quantity: event.quantityGrams,
-      })),
-    )
-    const sources: PondDaySource[] = cycle.dailyRecords.map((record) => {
-      const date = record.observedOn
-        ? formatJakartaDate(record.observedOn)
-        : null
-      return {
-        date,
-        doc: record.doc,
-        averageWeightGrams: asNumber(record.averageWeightGrams),
-        frMin: asNumber(record.frMin),
-        frMax: asNumber(record.frMax),
-        deaths: date == null ? 0 : (deaths.get(date) ?? 0),
-        actualFeedGrams: date == null ? 0 : (actual.get(date) ?? 0),
-      }
-    })
-    const stockings = cycle.stockings.map((stocking) => ({
-      occurredOn: formatJakartaDate(stocking.occurredOn),
-      quantity: stocking.quantity,
-    }))
-    const schedule = {
-      patterns: cycle.fastingPatterns.map((pattern) => ({
-        feedDayCount: pattern.feedDayCount,
-        fastDayCount: pattern.fastDayCount,
-        anchorOn: formatJakartaDate(pattern.anchorOn),
-        effectiveFrom: formatJakartaDate(pattern.effectiveFrom),
-      })),
-      overrides: cycle.fastingOverrides.map((override) => ({
-        startsAt: override.startsAt,
-        endsAt: override.endsAt,
-        reason: override.reason,
-        revokedAt: override.revokedAt,
-      })),
-    }
-    const summary = summarizePondCycle(sources, stockings, schedule)
+    const { summary, sources, stockings, schedule } = cycleSummary(cycle)
     const totalActual = cycle.feedApplications.reduce(
       (sum, event) => sum + event.quantityGrams,
       0,
@@ -326,6 +374,7 @@ async function loadBuilt() {
         summary.initialBiomassGrams,
         summary.latestBiomassGrams,
       ),
+      totalDeaths: summary.rows.reduce((sum, day) => sum + day.deaths, 0),
       days: summary.rows,
       sources,
       stockings,

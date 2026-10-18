@@ -1,7 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/tanstack-react'
 import { expect } from 'storybook/test'
 
-import { BiomassChart } from '#/features/pakan/components/pond-log/biomass-chart'
+import {
+  BiomassChart,
+  MortalityChart,
+} from '#/features/pakan/components/pond-log/biomass-chart'
 
 const meta = {
   title: 'Pakan/BiomassChart',
@@ -34,5 +37,23 @@ export const Empty: Story = {
   args: { points: [] },
   play: async ({ canvas }) => {
     await expect(canvas.getByText('Belum ada biomassa.')).toBeVisible()
+  },
+}
+
+export const Deaths: Story = {
+  render: () => (
+    <MortalityChart
+      pondCode="A3"
+      points={[
+        { date: '2026-10-02', deaths: 8 },
+        { date: '2026-10-03', deaths: 0 },
+      ]}
+    />
+  ),
+  play: async ({ canvas }) => {
+    await expect(
+      canvas.getByRole('img', { name: 'Kematian kolam A3' }),
+    ).toBeVisible()
+    await expect(canvas.getByText('Ekor per hari, termasuk nol.')).toBeVisible()
   },
 }

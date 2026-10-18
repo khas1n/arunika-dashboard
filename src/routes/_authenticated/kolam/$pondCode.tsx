@@ -7,7 +7,6 @@ import {
   defaultPondDayQuery,
   defaultPondHeaderQuery,
   kolamBibisQueryOptions,
-  kolamBiomassQueryOptions,
   kolamDaysQueryOptions,
   kolamHeaderQueryOptions,
   kolamOverridesQueryOptions,
@@ -30,7 +29,6 @@ const KolamPage: FC<{ pondCode: string }> = ({ pondCode }) => {
       prepareOn={bibis.prepareOn}
       feedingOn={bibis.feedingOn}
       cycle={cycle}
-      series={page.biomass.points}
       days={page.days.rows}
       dayRowCount={page.days.rowCount}
       dayTable={page.dayTable}
@@ -63,9 +61,6 @@ export const Route = createFileRoute('/_authenticated/kolam/$pondCode')({
     await Promise.all([
       context.queryClient.ensureQueryData(
         kolamBibisQueryOptions(defaultBibisQuery(pondCode)),
-      ),
-      context.queryClient.ensureQueryData(
-        kolamBiomassQueryOptions({ pondCode }),
       ),
       context.queryClient.ensureQueryData(
         kolamDaysQueryOptions(defaultPondDayQuery(pondCode)),

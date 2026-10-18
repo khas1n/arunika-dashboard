@@ -52,9 +52,24 @@ export const pondDayQuerySchema = pageQuerySchema(pondDaySortSchema).extend({
   pondCode: pondCodeSchema,
 })
 
-export const biomassSeriesQuerySchema = z.object({
-  pondCode: pondCodeSchema,
-})
+export const kolamChartQuerySchema = z
+  .object({
+    pondCode: pondCodeSchema,
+    from: calendarDateSchema.optional(),
+    to: calendarDateSchema.optional(),
+  })
+  .refine((value) => (value.from == null) === (value.to == null), {
+    path: ['to'],
+    message: 'Rentang wajib punya awal dan akhir',
+  })
+  .refine(
+    (value) =>
+      value.from == null || value.to == null || value.to >= value.from,
+    {
+      path: ['to'],
+      message: 'Hari terakhir tidak boleh sebelum hari pertama',
+    },
+  )
 
 export const kolamPondLinkSchema = z.object({
   code: z.string(),
@@ -137,6 +152,7 @@ export const kolamCycleSchema = z.object({
   fishSpeciesName: z.string(),
   cultivationMethodName: z.string(),
   fcr: z.number().nullable(),
+  totalDeaths: z.number().int(),
 })
 
 export const bibisLineSchema = z.object({
@@ -164,14 +180,15 @@ export const bibisPageSchema = pageSchema(bibisLineSchema)
 export const dadakanPageSchema = pageSchema(fastingOverrideItemSchema)
 export const pondDayPageSchema = pageSchema(pondDaySchema)
 
-export const biomassPointSchema = z.object({
+export const kolamChartPointSchema = z.object({
   date: calendarDateSchema,
-  biomassGrams: z.number(),
+  biomassGrams: z.number().nullable(),
+  deaths: z.number().int(),
 })
 
-export const biomassSeriesSchema = z.object({
+export const kolamChartSchema = z.object({
   pondCode: pondCodeSchema,
-  points: z.array(biomassPointSchema),
+  points: z.array(kolamChartPointSchema),
 })
 
 export type PondListQuery = z.infer<typeof pondListQuerySchema>
@@ -187,6 +204,6 @@ export type PondDay = z.infer<typeof pondDaySchema>
 export type KolamCycle = z.infer<typeof kolamCycleSchema>
 export type BibisLine = z.infer<typeof bibisLineSchema>
 export type FastingOverrideItem = z.infer<typeof fastingOverrideItemSchema>
-export type BiomassSeriesQuery = z.infer<typeof biomassSeriesQuerySchema>
-export type BiomassPoint = z.infer<typeof biomassPointSchema>
-export type BiomassSeries = z.infer<typeof biomassSeriesSchema>
+export type KolamChartQuery = z.infer<typeof kolamChartQuerySchema>
+export type KolamChartPoint = z.infer<typeof kolamChartPointSchema>
+export type KolamChart = z.infer<typeof kolamChartSchema>

@@ -26,7 +26,7 @@ Candidate workflows. Only the status column is a claim about this repository.
 
 | Workflow                           | What it would mean                                           | Status                                                                                                                                                                                 |
 | ---------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Fish development by pond and cycle | Population, biomass, and daily history for a batch on a pond | In the Kolam daily log and biomass chart, from imported history                                                                                                                        |
+| Fish development by pond and cycle | Population, biomass, and daily history for a batch on a pond | In the Kolam daily log. Biomassa and daily deaths are on the Grafik tab, from imported history                                                                                         |
 | Daily pond record                  | Add and edit the day's work, including deaths                | Catat harian adds a day. Berat, FR, kematian, and pakan aktual can be edited in the log. Derived columns are calculated again. A farm-specific list of what to record is a later shape |
 | Pond treatments                    | Treatments and medication against a pond or cycle            | Models exist (`Treatment`, `TreatmentLog`). No screen                                                                                                                                  |
 | Feed inventory and stock opname    | Receipts, use, and a physical count against the book         | Models exist (`FeedReceipt`, `FeedApplication`, `StockOpname`). The screen is the feed-name list only                                                                                  |
@@ -46,7 +46,7 @@ Screen copy is Indonesian today. Translations are planned.
 
 - Sign in with a username and password. Public sign-up is off. The first account comes from the database seed. Further accounts are created with `pnpm user:create`.
 - Beranda: see how many users and unexpired sessions exist, and manage jenis pakan (create, rename, delete only when the feed is unused).
-- Kolam: open a pond in batch order (A3, B3, C3, D3, A6, B6, C6, D6). Harian shows cycle facts, including jenis ikan and metode budidaya, a biomass line for the whole cycle, and a paged daily log. Catat harian adds a day. Berat, FR, kematian, and pakan aktual can be edited in the cells. Puasa shows puasa dadakan, including ended rows, and can record or end an active one. Catat harian and Catat puasa dadakan choose each day on the calendar. The saved value stays `YYYY-MM-DD`, the calendar day that was picked. Bibis for today stays visible on both tabs.
+- Kolam: open a pond in batch order (A3, B3, C3, D3, A6, B6, C6, D6). Cycle facts, including jenis ikan and metode budidaya, sit in an info control beside the title. Today's bibis, total kematian for the active cycle, and FCR stay above the tabs. Harian is the paged daily log. Catat harian adds a day. Berat, FR, kematian, and pakan aktual can be edited in the cells. Puasa shows puasa dadakan, including ended rows, and can record or end an active one. Grafik shows biomassa and that day's deaths for this pond. An empty range is the whole active cycle. Catat harian and Catat puasa dadakan choose each day on the calendar. The saved value stays `YYYY-MM-DD`, the calendar day that was picked.
 - Profil: the signed-in account. Pengaturan: theme and sidebar, stored in the browser.
 
 History for BATCH 1 is loaded by `pnpm db:import` from the Pakan workbook. Re-running that command replaces BATCH 1 cycles. It does not write puasa dadakan. Ponds, feed names, fish species, cultivation methods, and the administrator account stay. BATCH 1 cycles are Nila grown with Biofloc.
@@ -59,7 +59,7 @@ These are implemented, not proposals. Detail is in [GLOSSARY.md](GLOSSARY.md), [
 - Population, biomass, calculated feed, operational feed, and FCR are derived. They are not stored columns.
 - Actual feed is the applied quantity, not the workbook's recommended-feed column.
 - List screens use offset pages: `pageIndex`, `pageSize`, `sortId`, `sortDesc`, then `rows` and `rowCount`.
-- The biomass series is the exception. It is the whole cycle, not the daily-log page.
+- Grafik is the exception to paging. It loads this pond only, and only while that tab is open. An empty range is the whole active cycle. A chosen range is applied after the cycle is walked from its first day.
 
 ## Decisions
 

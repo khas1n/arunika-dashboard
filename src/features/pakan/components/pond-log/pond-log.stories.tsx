@@ -22,6 +22,7 @@ const cycles = [
     fishSpeciesName: 'Nila',
     cultivationMethodName: 'Biofloc',
     fcr: null,
+    totalDeaths: 16,
   },
   {
     id: 'a6',
@@ -35,6 +36,7 @@ const cycles = [
     fishSpeciesName: 'Nila',
     cultivationMethodName: 'Biofloc',
     fcr: 1.12,
+    totalDeaths: 40,
   },
 ] satisfies Array<KolamCycle>
 
@@ -92,9 +94,10 @@ const meta = {
         ended: false,
       },
     ],
-    series: [
-      { date: '2026-10-02', biomassGrams: 30000 },
-      { date: '2026-10-03', biomassGrams: 30000 },
+    chartPoints: [
+      { date: '2026-10-02', biomassGrams: 30000, deaths: 8 },
+      { date: '2026-10-03', biomassGrams: 30000, deaths: 8 },
+      { date: '2026-10-08', biomassGrams: 32000, deaths: 0 },
     ],
     onCreateOverride: fn(async () => {}),
     onRevokeOverride: fn(async () => {}),
@@ -106,22 +109,24 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const TwoPonds: Story = {
-  play: async ({ canvas }) => {
+  play: async ({ canvas, userEvent }) => {
     await expect(canvas.getByText(`${formatGrams(1000)} g`)).toBeVisible()
     await expect(
       canvas.queryByText(`${formatGrams(2500)} g`),
     ).not.toBeInTheDocument()
     await expect(canvas.getByText(formatGrams(412))).toBeVisible()
     await expect(canvas.queryByText(formatGrams(4267))).not.toBeInTheDocument()
+    await expect(canvas.getByText('Total kematian')).toBeVisible()
+    await expect(canvas.getByText(formatGrams(16))).toBeVisible()
+    await expect(canvas.getByText('FCR')).toBeVisible()
     await expect(
-      canvas.getByRole('img', {
-        name: 'Biomassa kolam A3 sepanjang siklus',
-      }),
-    ).toBeVisible()
-    await expect(canvas.getByText('Jenis ikan')).toBeVisible()
-    await expect(canvas.getByText('Nila')).toBeVisible()
-    await expect(canvas.getByText('Metode budidaya')).toBeVisible()
-    await expect(canvas.getByText('Biofloc')).toBeVisible()
+      canvas.queryByRole('img', { name: /Biomassa/ }),
+    ).not.toBeInTheDocument()
+    await userEvent.click(canvas.getByRole('button', { name: 'Info kolam' }))
+    await expect(screen.getByText('Jenis ikan')).toBeVisible()
+    await expect(screen.getByText('Nila')).toBeVisible()
+    await expect(screen.getByText('Metode budidaya')).toBeVisible()
+    await expect(screen.getByText('Biofloc')).toBeVisible()
     await expect(canvas.getByText('Dadakan')).toBeVisible()
     await expect(canvas.getAllByText('0').length).toBeGreaterThan(0)
   },
@@ -214,9 +219,7 @@ export const EditsCells: Story = {
 
     await userEvent.click(cell('Ubah Kematian'))
     await userEvent.click(
-      canvas.getByText(
-        'Satu halaman dari log. Grafik di atas memakai seluruh siklus.',
-      ),
+      canvas.getByText('Satu halaman dari log.'),
     )
     await expect(screen.queryByLabelText('Kematian')).not.toBeInTheDocument()
 
@@ -291,10 +294,37 @@ export const RollsBackEdit: Story = {
   },
 }
 
+export const Grafik: Story = {
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.click(canvas.getByRole('tab', { name: 'Grafik' }))
+    await expect(canvas.getByText('Seluruh siklus. 3 hari.')).toBeVisible()
+    await expect(
+      canvas.getByRole('img', {
+        name: 'Biomassa kolam A3 sepanjang siklus',
+      }),
+    ).toBeVisible()
+    await expect(
+      canvas.getByRole('img', { name: 'Kematian kolam A3' }),
+    ).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Rentang' }))
+    await userEvent.click(
+      await screen.findByRole('button', { name: /, 2 Oktober 2026/ }),
+    )
+    await userEvent.click(
+      screen.getByRole('button', { name: /, 3 Oktober 2026/ }),
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Terapkan' }))
+    await expect(canvas.getByText(/2 hari/)).toBeVisible()
+    await expect(
+      canvas.queryByText('Seluruh siklus. 3 hari.'),
+    ).not.toBeInTheDocument()
+  },
+}
+
 export const Empty: Story = {
   args: {
     cycle: null,
-    series: [],
+    chartPoints: [],
     days: [],
     bibis: [],
     overrides: [],

@@ -22,7 +22,7 @@ One paged Kolam read. The pond screen uses a separate list for each of these:
 
 The pond list has one sort: batch order A3, B3, C3, D3, A6, B6, C6, D6.
 
-The pond screen shows one tab at a time. The title is on the left, and Harian and Puasa sit under it. Bibis stays visible on both tabs. Harian is the pond facts, the biomass series, and the daily log. Catat harian sits on the right when Harian is selected. Puasa is puasa dadakan, and Catat puasa dadakan sits on the right. Another workbook sheet can become another tab later.
+The pond screen shows one tab at a time. The title is on the left. An info control lists asal bibit, jumlah bibit, volume, puasa, pakan, jenis ikan, and metode budidaya. A strip above the tabs shows today's bibis, total kematian for the active cycle, and FCR, and it stays on every tab. Harian is the daily log. Puasa is puasa dadakan. Grafik holds the biomass line and the daily death line. Catat harian sits on the right when Harian is selected. Catat puasa dadakan sits on the right when Puasa is selected. Another workbook sheet can become another tab later.
 
 ## Jenis ikan
 
@@ -40,7 +40,7 @@ Creating or ending a puasa dadakan is not a list.
 
 ## Biomass series
 
-The biomass line for one pond. One point per day that has a date and a biomass, in date order, for the whole cycle. It is not a page: there is no `pageIndex`, `pageSize`, or `rowCount`. The daily log stays a page. Paging that log does not change the line.
+The Grafik tab for one pond. Biomassa is one point per dated day that has biomass. Kematian is that day's death total, including zero, for every dated day in the range, and it is not cumulative. Hovering a day shows that date and its value. Axis numbers use the same grouping as the rest of the page. An empty range is the whole active cycle. A range still walks from the first day of the cycle, then drops days outside it, because a later population depends on earlier days. The series is not a page. It loads only while Grafik is open, and only for this pond. Paging the daily log does not change the lines.
 
 ## Status badge
 

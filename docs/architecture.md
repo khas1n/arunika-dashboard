@@ -76,7 +76,7 @@ Auth tables are Better Auth's `User`, `Session`, `Account`, and `Verification`.
 
 Pakan tables are a reference layer (`Pond`, `Feed`, `SeedSource`, `Treatment`, `FeedingRateBand`, `FeedAdditive`), a cycle (`Batch`, `BatchPond`), snapshots (`PondDailyRecord`), and append-only events (stocking, mortality, bibis, feed receipt, feed application, stock opname, treatment log, fasting pattern, fasting override). The entity map is in [pakan-database-design.md](pakan-database-design.md).
 
-Kolam list reads are offset pages. The server still walks the whole pond history before it slices a day page, because population and biomass depend on earlier days. The biomass chart is a separate read of that full series. See [adr/0001-kolam-reads-are-offset-pages.md](adr/0001-kolam-reads-are-offset-pages.md) and the glossary entry for the series.
+Kolam list reads are offset pages. The server still walks the whole pond history before it slices a day page, because population and biomass depend on earlier days. Grafik is a separate read of this pond only. It walks the cycle from the first day, then drops days outside an optional range, and it is not loaded with the page. See [adr/0001-kolam-reads-are-offset-pages.md](adr/0001-kolam-reads-are-offset-pages.md) and the glossary entry for the series.
 
 ## State
 

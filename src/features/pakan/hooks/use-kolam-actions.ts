@@ -66,7 +66,7 @@ export function useKolamActions(pondCode: string) {
       queryClient.invalidateQueries({ queryKey: [...kolamQueryKey, 'days'] }),
       queryClient.invalidateQueries({ queryKey: [...kolamQueryKey, 'bibis'] }),
       queryClient.invalidateQueries({
-        queryKey: [...kolamQueryKey, 'biomass'],
+        queryKey: [...kolamQueryKey, 'chart'],
       }),
       queryClient.invalidateQueries({
         queryKey: [...kolamQueryKey, 'header'],

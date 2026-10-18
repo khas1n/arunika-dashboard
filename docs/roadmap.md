@@ -34,7 +34,7 @@ The README keeps the short version. This file is the detail.
 | Feed names on Beranda, delete blocked when the feed is used       | Completed | `src/features/pakan` feed list                                                                                                                          |
 | Pond navigation and BATCH 1 history import                        | Completed | Kolam routes, `pnpm db:import`                                                                                                                          |
 | Fish species and cultivation method on the cycle                  | Completed | `FishSpecies` and `CultivationMethod`. Kolam header shows the names. First rows: Nila, Biofloc                                                          |
-| Daily log, biomass for the whole cycle, FCR, bibis, puasa dadakan | Completed | Kolam page and domain functions                                                                                                                         |
+| Daily log, Grafik for the whole cycle, FCR, bibis, puasa dadakan | Completed | Kolam page and domain functions                                                                                                                         |
 | Add and edit a day's work, including deaths, in a form            | Completed | Catat harian and inline edit of berat, FR, kematian, and pakan aktual. Derived columns are calculated again. A farm-specific checklist is a later shape |
 | Feed receipts, stock opname, and on-hand quantity as screens      | Proposed  | Models exist. The UI does not record them                                                                                                               |
 | Treatment records as a screen                                     | Proposed  | `Treatment` and `TreatmentLog` exist. No screen                                                                                                         |
@@ -47,7 +47,7 @@ Adding and editing a day's inputs is on the Harian log. A farm-specific list of 
 
 | Item                                             | Status    | Evidence                                       |
 | ------------------------------------------------ | --------- | ---------------------------------------------- |
-| FCR and biomass on the pond                      | Completed | Derived on the Kolam header and chart          |
+| FCR and biomass on the pond                      | Completed | FCR on the Kolam strip; biomass on Grafik       |
 | Beranda beyond user and session counts           | Proposed  | `getDashboardSummary` returns those two counts |
 | Harvest, cost, and reminders                     | Proposed  | Not modeled                                    |
 | More reports after someone uses the daily record | Proposed  | No feedback channel is set up in the repo      |
