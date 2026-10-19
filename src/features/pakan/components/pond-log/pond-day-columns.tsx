@@ -19,6 +19,8 @@ export const pondDayColumns = column.columns([
   column.accessor('doc', {
     header: 'DOC',
     cell: ({ getValue }) => getValue(),
+    enableSorting: false,
+    enablePinning: false,
   }),
   column.accessor('averageWeightGrams', {
     header: 'Berat (g)',

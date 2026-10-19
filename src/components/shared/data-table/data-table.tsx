@@ -47,6 +47,7 @@ import {
   RefreshCcw,
   Search,
   X,
+  EyeOff,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { Header, Row, RowData } from '@tanstack/react-table'
@@ -504,7 +505,10 @@ const DataTableColumnMenu: FC = () => {
           <Ellipsis className="opacity-60" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent
+        className="divide-y p-0 *:data-[slot=dropdown-menu-group]:px-1 *:data-[slot=dropdown-menu-group]:py-1"
+        align="end"
+      >
         {canPin ? (
           <DropdownMenuGroup>
             <DropdownMenuItem
@@ -529,15 +533,14 @@ const DataTableColumnMenu: FC = () => {
         ) : null}
         {canHide ? (
           <DropdownMenuGroup>
-            <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => column.toggleVisibility(false)}>
+              <EyeOff data-icon="inline-start" className="opacity-60" />
               Sembunyikan
             </DropdownMenuItem>
           </DropdownMenuGroup>
         ) : null}
         {canFilter ? (
           <DropdownMenuGroup>
-            <DropdownMenuSeparator />
             <DropdownMenuLabel>Filter</DropdownMenuLabel>
             <div className="px-2 py-1">
               <Input
@@ -576,6 +579,7 @@ interface DataTableGridProps {
   renderSubComponent?: (
     row: Row<typeof dataTableFeatures, RowData>,
   ) => ReactNode
+  className?: string
 }
 
 const DataTableGrid: FC<DataTableGridProps> = ({
@@ -583,6 +587,7 @@ const DataTableGrid: FC<DataTableGridProps> = ({
   isLoading = false,
   isFetching = false,
   renderSubComponent,
+  className,
 }) => {
   const table = useTableContext()
 
@@ -594,6 +599,7 @@ const DataTableGrid: FC<DataTableGridProps> = ({
           isLoading={isLoading}
           isFetching={isFetching}
           renderSubComponent={renderSubComponent}
+          className={className}
         />
       )}
     </table.Subscribe>
@@ -605,6 +611,7 @@ interface DataTableGridBodyProps {
   isLoading: boolean
   isFetching: boolean
   renderSubComponent?: DataTableGridProps['renderSubComponent']
+  className?: string
 }
 
 const DataTableGridBody: FC<DataTableGridBodyProps> = ({
@@ -612,6 +619,7 @@ const DataTableGridBody: FC<DataTableGridBodyProps> = ({
   isLoading,
   isFetching,
   renderSubComponent,
+  className,
 }) => {
   const table = useTableContext()
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -689,6 +697,7 @@ const DataTableGridBody: FC<DataTableGridBodyProps> = ({
         className={cn(
           'max-h-96 min-w-0 overflow-auto rounded-md border transition-opacity',
           refreshing && 'opacity-60',
+          className,
         )}
       >
         <DndContext

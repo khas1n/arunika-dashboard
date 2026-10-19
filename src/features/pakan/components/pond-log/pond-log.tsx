@@ -57,6 +57,11 @@ import type {
   PondDay,
   PondDayWrite,
 } from '#/features/pakan/schemas/kolam'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '#/components/ui/tooltip'
 
 interface PondLogProps {
   prepareOn: string
@@ -186,9 +191,8 @@ export const PondLog: FC<PondLogProps> = ({
             </TabsList>
             <TabsContent value="harian" className="grid min-w-0 gap-4">
               <Card className="min-w-0">
-                <CardHeader>
-                  <CardTitle>Catatan harian</CardTitle>
-                  <CardDescription>Satu halaman dari log.</CardDescription>
+                <CardHeader className="pb-0">
+                  <CardTitle className="pb-0">Catatan harian</CardTitle>
                 </CardHeader>
                 <CardContent className="min-w-0">
                   <DataTableFrame>
@@ -212,6 +216,7 @@ export const PondLog: FC<PondLogProps> = ({
                         <table.Grid
                           emptyLabel="Belum ada catatan harian."
                           isFetching={daysFetching}
+                          className="max-h-auto"
                         />
                         <table.Pagination />
                       </table.AppTable>
@@ -403,18 +408,25 @@ interface PondFactsProps {
 const PondFacts: FC<PondFactsProps> = ({ cycle }) => {
   return (
     <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          aria-label="Info kolam"
-        >
-          <Info />
-        </Button>
+      <PopoverTrigger>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Info kolam"
+            >
+              <Info />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Info kolam</p>
+          </TooltipContent>
+        </Tooltip>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-80">
-        <PopoverHeader>
+        <PopoverHeader className="mb-3">
           <PopoverTitle>Info kolam</PopoverTitle>
         </PopoverHeader>
         <dl className="grid gap-2 text-sm">
@@ -456,7 +468,7 @@ const MetricCard: FC<MetricCardProps> = ({ label, value, detail }) => {
     <Card>
       <CardHeader className="gap-1">
         <CardDescription>{label}</CardDescription>
-        <CardTitle className="text-2xl font-semibold tracking-tight">
+        <CardTitle className="text-2xl font-semibold tracking-tight text-destructive">
           {value}
         </CardTitle>
         {detail ? (
