@@ -17,6 +17,7 @@
     "check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test:stories": "vitest --project storybook",
+    "test:unit": "vitest run --project unit",
     "db:up": "docker compose up -d db",
     "db:down": "docker compose down",
     "db:generate": "prisma generate",

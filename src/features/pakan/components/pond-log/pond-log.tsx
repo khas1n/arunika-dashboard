@@ -1,11 +1,20 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FC } from 'react'
 import type { DateRange } from '@daypicker/react'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
-import { CalendarDays, ChartLine, Info, UtensilsCrossed } from 'lucide-react'
+import { toast } from 'sonner'
+import { z } from 'zod'
+import {
+  CalendarDays,
+  ChartLine,
+  ChevronDown,
+  Info,
+  Plus,
+  UtensilsCrossed,
+} from 'lucide-react'
 import { AppDialog } from '#/components/shared/app-dialog'
-import { useAppForm } from '#/components/shared/form'
+import { FormError, useAppForm, useFormError } from '#/components/shared/form'
 import { ConfirmDialog } from '#/components/shared/confirm-dialog'
 import {
   DataTableFrame,
@@ -14,6 +23,16 @@ import {
 } from '#/components/shared/data-table'
 import type { ServerTableControls } from '#/components/shared/data-table'
 import { Button } from '#/components/ui/button'
+import { FieldGroup } from '#/components/ui/field'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '#/components/ui/dropdown-menu'
 import {
   Popover,
   PopoverContent,
@@ -24,6 +43,7 @@ import {
 import { kolamChartQueryOptions } from '#/features/pakan/api/kolam.queries'
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -40,6 +60,7 @@ import {
   formatCalendar,
   formatFcr,
   formatGrams,
+  formatLongCalendar,
   formatQuantity,
 } from '#/features/pakan/components/pond-log/format-pond'
 import {
@@ -47,7 +68,10 @@ import {
   overrideColumns,
 } from '#/features/pakan/components/pond-log/override-columns'
 import { pondDayColumns } from '#/features/pakan/components/pond-log/pond-day-columns'
-import { PondDayEditProvider } from '#/features/pakan/components/pond-log/pond-day-cell'
+import {
+  PondDayEditProvider,
+  pondDayRowId,
+} from '#/features/pakan/components/pond-log/pond-day-cell'
 import type {
   BibisLine,
   FastingOverrideInput,
@@ -55,11 +79,16 @@ import type {
   KolamChartPoint,
   KolamCycle,
   PondDay,
-  PondDayWrite,
+  PondDayDraft,
+  PondDayFormValues,
+  PondDayLookup,
+  PondDaySave,
 } from '#/features/pakan/schemas/kolam'
+import { todayInJakarta } from '#/features/pakan/domain/feeding-schedule'
 import {
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
 } from '#/components/ui/tooltip'
 
@@ -79,7 +108,9 @@ interface PondLogProps {
   overridesFetching?: boolean
   onCreateOverride: (values: FastingOverrideInput) => Promise<unknown>
   onRevokeOverride: (id: string) => Promise<unknown>
-  onUpsertDay: (values: PondDayWrite) => Promise<unknown>
+  onUpsertDay: (values: PondDaySave) => Promise<unknown>
+  onDayExists?: (input: PondDayLookup) => Promise<boolean>
+  onLoadDay?: (input: PondDayLookup) => Promise<PondDayDraft | null>
 }
 
 export const PondLog: FC<PondLogProps> = ({
@@ -99,22 +130,27 @@ export const PondLog: FC<PondLogProps> = ({
   onCreateOverride,
   onRevokeOverride,
   onUpsertDay,
+  onDayExists,
+  onLoadDay,
 }) => {
   const [tab, setTab] = useState('harian')
   const [recording, setRecording] = useState(false)
-  const [recordingDay, setRecordingDay] = useState(false)
+  const [report, setReport] = useState<ReportKind | null>(null)
+  const [replacing, setReplacing] = useState<PondDayFormValues | null>(null)
+  const [replacingPending, setReplacingPending] = useState(false)
   const [ending, setEnding] = useState<FastingOverrideItem>()
   const [endingIds, setEndingIds] = useState<Array<string>>([])
   const [pendingEnd, setPendingEnd] = useState(false)
   const [endError, setEndError] = useState<string>()
   const table = useAppTable({
-    data: days,
+    data: dayTable ? days : [...days].sort(byDateDesc),
     columns: pondDayColumns,
-    getRowId: (row) => String(row.doc),
+    getRowId: (row) => pondDayRowId(row),
     enableRowSelection: false,
     initialState: {
       columnPinning: { start: ['date'], end: [] },
       pagination: { pageIndex: 0, pageSize: 25 },
+      sorting: [{ id: 'date', desc: true }],
     },
     ...(dayTable ? { ...dayTable, rowCount: dayRowCount ?? days.length } : {}),
   })
@@ -131,50 +167,17 @@ export const PondLog: FC<PondLogProps> = ({
 
   return (
     <section className="grid min-w-0 gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="grid gap-1">
-          <div className="flex items-center gap-1">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {cycle ? `Kolam ${cycle.pondCode}` : 'Kolam'}
-            </h1>
-            {cycle ? <PondFacts cycle={cycle} /> : null}
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Catatan harian, pakan aktual, dan bibis untuk kolam ini.
-          </p>
-        </div>
-        {cycle && tab === 'harian' ? (
-          <Button type="button" size="sm" onClick={() => setRecordingDay(true)}>
-            Catat harian
-          </Button>
-        ) : null}
-        {cycle && tab === 'puasa' ? (
-          <Button type="button" size="sm" onClick={() => setRecording(true)}>
-            Catat puasa dadakan
-          </Button>
-        ) : null}
-      </div>
-
       {cycle == null ? (
-        <p className="text-sm text-muted-foreground">
-          Belum ada data kolam. Jalankan impor BATCH 1.
-        </p>
+        <>
+          <PondHeading />
+          <p className="text-sm text-muted-foreground">
+            Belum ada data kolam. Jalankan impor BATCH 1.
+          </p>
+        </>
       ) : (
-        <div className="grid gap-6">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <MetricCard
-              label="Bibis"
-              value={bibisAmount(bibis[0])}
-              detail={`Siapkan pada ${formatCalendar(prepareOn)} untuk pemberian ${formatCalendar(feedingOn)}.`}
-            />
-            <MetricCard
-              label="Total kematian"
-              value={formatGrams(cycle.totalDeaths)}
-              detail="Seluruh siklus aktif."
-            />
-            <MetricCard label="FCR" value={formatFcr(cycle.fcr)} />
-          </div>
-          <Tabs value={tab} onValueChange={setTab} className="min-w-0 gap-6">
+        <Tabs value={tab} onValueChange={setTab} className="min-w-0 gap-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <PondHeading cycle={cycle} />
             <TabsList>
               <TabsTrigger value="harian">
                 <CalendarDays />
@@ -189,115 +192,236 @@ export const PondLog: FC<PondLogProps> = ({
                 Grafik
               </TabsTrigger>
             </TabsList>
-            <TabsContent value="harian" className="grid min-w-0 gap-4">
-              <Card className="min-w-0">
-                <CardHeader className="pb-0">
-                  <CardTitle className="pb-0">Catatan harian</CardTitle>
-                </CardHeader>
-                <CardContent className="min-w-0">
-                  <DataTableFrame>
-                    <PondDayEditProvider
-                      onSave={async (day, patch) => {
-                        if (day.date == null) return
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <MetricCard
+              label="Bibis"
+              value={bibisAmount(bibis[0])}
+              detail={`Siapkan pada ${formatCalendar(prepareOn)} untuk pemberian ${formatCalendar(feedingOn)}.`}
+            />
+            <MetricCard
+              label="Total kematian"
+              value={formatGrams(cycle.totalDeaths)}
+              detail="Seluruh siklus aktif."
+            />
+            <MetricCard label="FCR" value={formatFcr(cycle.fcr)} />
+          </div>
+          <TodayReminder cycle={cycle} onOpen={(kind) => setReport(kind)} />
+          <TabsContent value="harian" className="grid min-w-0 gap-4">
+            <Card className="min-w-0">
+              <CardHeader>
+                <CardTitle>Catatan harian</CardTitle>
+                <CardDescription>
+                  Berat, kematian, dan pakan aktual untuk setiap hari. Klik sel
+                  untuk mengubah. Nol tetap tercatat.
+                </CardDescription>
+                <CardAction>
+                  <ReportMenu
+                    cycle={cycle}
+                    onSelect={(kind) => setReport(kind)}
+                  />
+                </CardAction>
+              </CardHeader>
+              <CardContent className="min-w-0">
+                <DataTableFrame>
+                  <PondDayEditProvider
+                    onSave={async (day, patch) => {
+                      if (day.date == null) return
+                      const base = {
+                        batchPondId: cycle.id,
+                        date: day.date,
+                        notify: false as const,
+                      }
+                      if (patch.averageWeightGrams !== undefined) {
                         await onUpsertDay({
-                          batchPondId: cycle.id,
-                          date: day.date,
-                          averageWeightGrams: day.averageWeightGrams,
-                          frMin: day.frMin,
-                          frMax: day.frMax,
-                          deaths: day.deaths,
-                          actualFeedGrams: day.actualFeedGrams,
-                          create: false,
-                          ...patch,
+                          ...base,
+                          kind: 'weight',
+                          averageWeightGrams: patch.averageWeightGrams,
                         })
-                      }}
-                    >
-                      <table.AppTable>
-                        <table.Grid
-                          emptyLabel="Belum ada catatan harian."
-                          isFetching={daysFetching}
-                          className="max-h-auto"
-                        />
-                        <table.Pagination />
-                      </table.AppTable>
-                    </PondDayEditProvider>
-                  </DataTableFrame>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            <TabsContent value="puasa" className="grid min-w-0 gap-4">
-              <Card className="min-w-0">
-                <CardHeader>
-                  <CardTitle>Puasa dadakan</CardTitle>
-                  <CardDescription>
-                    Baris yang masih aktif bisa diakhiri. Yang sudah diakhiri
-                    tetap tersimpan.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="min-w-0">
-                  <OverrideEndProvider
-                    onEnd={(override) => {
-                      setEndError(undefined)
-                      setEndingIds([])
-                      setEnding(override)
+                      }
+                      if (patch.deaths !== undefined) {
+                        await onUpsertDay({
+                          ...base,
+                          kind: 'deaths',
+                          deaths: patch.deaths,
+                        })
+                      }
+                      if (patch.actualFeedGrams !== undefined) {
+                        await onUpsertDay({
+                          ...base,
+                          kind: 'feed',
+                          actualFeedGrams: patch.actualFeedGrams,
+                        })
+                      }
                     }}
                   >
-                    <DataTableFrame>
-                      <DataTableSelectionBar
-                        actionLabel="Akhiri"
-                        pending={pendingEnd}
-                        onAction={(ids) => {
-                          setEndError(undefined)
-                          setEnding(undefined)
-                          setEndingIds(ids)
-                        }}
-                      >
-                        <overridesGrid.AppTable>
-                          <overridesGrid.Grid
-                            emptyLabel="Belum ada puasa dadakan."
-                            isFetching={overridesFetching}
-                          />
-                          <overridesGrid.Pagination />
-                        </overridesGrid.AppTable>
-                      </DataTableSelectionBar>
-                    </DataTableFrame>
-                  </OverrideEndProvider>
-                </CardContent>
-              </Card>
+                    <table.AppTable>
+                      <table.Grid
+                        emptyLabel="Belum ada catatan harian."
+                        isFetching={daysFetching}
+                        className="max-h-auto"
+                      />
+                      <table.Pagination />
+                    </table.AppTable>
+                  </PondDayEditProvider>
+                </DataTableFrame>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="puasa" className="grid min-w-0 gap-4">
+            <Card className="min-w-0">
+              <CardHeader>
+                <CardTitle>Puasa dadakan</CardTitle>
+                <CardDescription>
+                  Puasa di luar pola kolam. Catat rentang baru, atau pilih baris
+                  yang masih berjalan untuk mengakhiri. Riwayat yang sudah
+                  berakhir tetap tersimpan.
+                </CardDescription>
+                <CardAction>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => setRecording(true)}
+                  >
+                    <Plus data-icon="inline-start" />
+                    Catat puasa dadakan
+                  </Button>
+                </CardAction>
+              </CardHeader>
+              <CardContent className="min-w-0">
+                <OverrideEndProvider
+                  onEnd={(override) => {
+                    setEndError(undefined)
+                    setEndingIds([])
+                    setEnding(override)
+                  }}
+                >
+                  <DataTableFrame>
+                    <DataTableSelectionBar
+                      actionLabel="Akhiri"
+                      pending={pendingEnd}
+                      onAction={(ids) => {
+                        setEndError(undefined)
+                        setEnding(undefined)
+                        setEndingIds(ids)
+                      }}
+                    >
+                      <overridesGrid.AppTable>
+                        <overridesGrid.Grid
+                          emptyLabel="Belum ada puasa dadakan."
+                          isFetching={overridesFetching}
+                        />
+                        <overridesGrid.Pagination />
+                      </overridesGrid.AppTable>
+                    </DataTableSelectionBar>
+                  </DataTableFrame>
+                </OverrideEndProvider>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          {tab === 'grafik' ? (
+            <TabsContent value="grafik" className="grid min-w-0 gap-4">
+              <PondCharts pondCode={cycle.pondCode} points={chartPoints} />
             </TabsContent>
-            {tab === 'grafik' ? (
-              <TabsContent value="grafik" className="grid min-w-0 gap-4">
-                <PondCharts pondCode={cycle.pondCode} points={chartPoints} />
-              </TabsContent>
-            ) : null}
-          </Tabs>
-        </div>
+          ) : null}
+        </Tabs>
       )}
 
       <AppDialog
-        open={recordingDay}
-        onOpenChange={setRecordingDay}
-        title="Catat harian"
-        description={
-          cycle
-            ? `Catat satu hari untuk kolam ${cycle.pondCode}. DOC diisi otomatis. Tanggal yang sudah ada ditolak.`
-            : 'Catat harian.'
-        }
+        open={report === 'day'}
+        onOpenChange={(open) => {
+          if (!open) setReport(null)
+        }}
+        title="Tambah catatan harian"
+        description="Pilih tanggal. Berat, kematian, dan pakan aktual tanggal itu dimuat. FR dihitung dari berat."
       >
         {cycle ? (
           <PondDayForm
-            onCancel={() => setRecordingDay(false)}
+            loadDay={
+              onLoadDay
+                ? (date) => onLoadDay({ batchPondId: cycle.id, date })
+                : undefined
+            }
+            onCancel={() => setReport(null)}
             onSubmit={async (values) => {
-              await onUpsertDay({
-                ...values,
-                batchPondId: cycle.id,
-                create: true,
-              })
-              setRecordingDay(false)
+              const onPage = days.some((day) => day.date === values.date)
+              const exists =
+                onPage ||
+                (onDayExists != null &&
+                  (await onDayExists({
+                    batchPondId: cycle.id,
+                    date: values.date,
+                  })))
+              if (exists) {
+                setReport(null)
+                setReplacing(values)
+                return
+              }
+              await saveHistoricalDay(onUpsertDay, cycle.id, values)
+              setReport(null)
             }}
           />
         ) : null}
       </AppDialog>
+
+      {cycle && report != null && report !== 'day' ? (
+        <TodayReportDialog
+          key={report}
+          cycle={cycle}
+          kind={report}
+          onOpenChange={(open) => {
+            if (!open) setReport(null)
+          }}
+          onSubmit={async (value) => {
+            if (report === 'weight') {
+              await onUpsertDay({
+                kind: 'weight',
+                batchPondId: cycle.id,
+                date: todayInJakarta(),
+                averageWeightGrams: value,
+              })
+            } else if (report === 'deaths') {
+              await onUpsertDay({
+                kind: 'deaths',
+                batchPondId: cycle.id,
+                date: todayInJakarta(),
+                deaths: value,
+              })
+            } else {
+              await onUpsertDay({
+                kind: 'feed',
+                batchPondId: cycle.id,
+                date: todayInJakarta(),
+                actualFeedGrams: value,
+              })
+            }
+            setReport(null)
+          }}
+        />
+      ) : null}
+
+      <ConfirmDialog
+        open={replacing != null}
+        onOpenChange={(open) => {
+          if (!open && !replacingPending) setReplacing(null)
+        }}
+        title="Ganti catatan harian"
+        description={
+          replacing
+            ? `Catatan harian untuk ${formatLongCalendar(replacing.date)}. Jika Anda melanjutkan, data yang tersimpan untuk tanggal tersebut akan diganti dengan data baru. Apakah Anda yakin ingin melanjutkan?`
+            : ''
+        }
+        confirmLabel="Lanjutkan"
+        pending={replacingPending}
+        onConfirm={() => {
+          if (!replacing || !cycle) return
+          const values = replacing
+          setReplacingPending(true)
+          void saveHistoricalDay(onUpsertDay, cycle.id, values)
+            .then(() => setReplacing(null))
+            .finally(() => setReplacingPending(false))
+        }}
+      />
 
       <AppDialog
         open={recording}
@@ -394,6 +518,299 @@ export const PondLog: FC<PondLogProps> = ({
   )
 }
 
+type TodayKind = 'weight' | 'deaths' | 'feed'
+type ReportKind = TodayKind | 'day'
+
+const weightValueSchema = z.number().nonnegative('Tidak boleh negatif')
+const countValueSchema = z
+  .number()
+  .int('Harus bilangan bulat')
+  .nonnegative('Tidak boleh negatif')
+
+const todayCopy = {
+  weight: {
+    add: 'Tambah berat',
+    edit: 'Ubah berat',
+    description: 'Berat rata-rata hari ini.',
+    label: 'Berat (g)',
+    name: 'Berat ikan',
+    fractionDigits: 3,
+    integer: false,
+  },
+  deaths: {
+    add: 'Tambah kematian',
+    edit: 'Ubah kematian',
+    description: 'Jumlah kematian hari ini.',
+    label: 'Kematian',
+    name: 'Kematian',
+    fractionDigits: 0,
+    integer: true,
+  },
+  feed: {
+    add: 'Aktual pakan',
+    edit: 'Ubah aktual pakan',
+    description: 'Pakan aktual hari ini.',
+    label: 'Pakan aktual (g)',
+    name: 'Aktual pakan',
+    fractionDigits: 0,
+    integer: true,
+  },
+} as const
+
+function isRecorded(cycle: KolamCycle, kind: TodayKind) {
+  if (kind === 'weight') return cycle.todayWeightGrams != null
+  if (kind === 'deaths') return cycle.todayDeaths != null
+  return cycle.todayFeedGrams != null
+}
+
+function recordedValue(cycle: KolamCycle, kind: TodayKind) {
+  if (kind === 'weight') return cycle.todayWeightGrams
+  if (kind === 'deaths') return cycle.todayDeaths
+  return cycle.todayFeedGrams
+}
+
+function missingReports(cycle: KolamCycle) {
+  return (['weight', 'deaths', 'feed'] as const).filter(
+    (kind) => !isRecorded(cycle, kind),
+  )
+}
+
+function byDateDesc(left: PondDay, right: PondDay) {
+  if (left.date == null && right.date == null) return left.doc - right.doc
+  if (left.date == null) return 1
+  if (right.date == null) return -1
+  if (left.date === right.date) return left.doc - right.doc
+  return left.date < right.date ? 1 : -1
+}
+
+function saveHistoricalDay(
+  onUpsertDay: (values: PondDaySave) => Promise<unknown>,
+  batchPondId: string,
+  values: PondDayFormValues,
+) {
+  return onUpsertDay({
+    kind: 'day',
+    batchPondId,
+    date: values.date,
+    averageWeightGrams: values.averageWeightGrams,
+    deaths: values.deaths,
+    actualFeedGrams: values.actualFeedGrams,
+  })
+}
+
+interface ReportMenuProps {
+  cycle: KolamCycle
+  onSelect: (kind: ReportKind) => void
+}
+
+const ReportMenu: FC<ReportMenuProps> = ({ cycle, onSelect }) => {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button type="button" size="sm">
+          <Plus data-icon="inline-start" />
+          Catat
+          <ChevronDown data-icon="inline-end" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-64">
+        <DropdownMenuLabel>Hari ini</DropdownMenuLabel>
+        <DropdownMenuGroup>
+          {(['weight', 'deaths', 'feed'] as const).map((kind) => (
+            <DropdownMenuItem key={kind} onSelect={() => onSelect(kind)}>
+              <span className="flex-1">{todayCopy[kind].add}</span>
+              {isRecorded(cycle, kind) ? (
+                <span className="text-xs text-muted-foreground">
+                  Sudah dicatat
+                </span>
+              ) : null}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => onSelect('day')}>
+          Tambah catatan harian
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+interface TodayReminderProps {
+  cycle: KolamCycle
+  onOpen: (kind: TodayKind) => void
+}
+
+const todayKinds = ['weight', 'deaths', 'feed'] as const
+
+function reminderId(pondCode: string, kind: TodayKind) {
+  return `today-report:${pondCode}:${todayInJakarta()}:${kind}`
+}
+
+const TodayReminder: FC<TodayReminderProps> = ({ cycle, onOpen }) => {
+  const onOpenRef = useRef(onOpen)
+  onOpenRef.current = onOpen
+  const [closed, setClosed] = useState<Array<TodayKind>>([])
+  const skipDismiss = useRef(new Set<string>())
+  const missingKey = missingReports(cycle)
+    .filter((kind) => !closed.includes(kind))
+    .join(',')
+
+  useEffect(() => {
+    const missing = new Set(missingKey === '' ? [] : missingKey.split(','))
+    for (const kind of todayKinds) {
+      const id = reminderId(cycle.pondCode, kind)
+      if (!missing.has(kind)) {
+        skipDismiss.current.add(id)
+        toast.dismiss(id)
+        continue
+      }
+      skipDismiss.current.delete(id)
+      toast.warning(`${todayCopy[kind].name} hari ini belum dicatat.`, {
+        id,
+        duration: Infinity,
+        position: 'bottom-right',
+        closeButton: true,
+        richColors: true,
+        action: {
+          label: todayCopy[kind].add,
+          onClick: (event) => {
+            event.preventDefault()
+            onOpenRef.current(kind)
+          },
+        },
+        onDismiss: () => {
+          if (skipDismiss.current.has(id)) {
+            skipDismiss.current.delete(id)
+            return
+          }
+          setClosed((current) =>
+            current.includes(kind) ? current : [...current, kind],
+          )
+        },
+      })
+    }
+  }, [cycle.pondCode, missingKey])
+
+  useEffect(() => {
+    const pondCode = cycle.pondCode
+    return () => {
+      for (const kind of todayKinds) {
+        const id = reminderId(pondCode, kind)
+        skipDismiss.current.add(id)
+        toast.dismiss(id)
+      }
+    }
+  }, [cycle.pondCode])
+
+  return null
+}
+
+interface TodayReportDialogProps {
+  cycle: KolamCycle
+  kind: TodayKind
+  onOpenChange: (open: boolean) => void
+  onSubmit: (value: number) => Promise<unknown>
+}
+
+const TodayReportDialog: FC<TodayReportDialogProps> = ({
+  cycle,
+  kind,
+  onOpenChange,
+  onSubmit,
+}) => {
+  const copy = todayCopy[kind]
+  const recorded = isRecorded(cycle, kind)
+  return (
+    <AppDialog
+      open
+      onOpenChange={onOpenChange}
+      title={recorded ? copy.edit : copy.add}
+      description={copy.description}
+    >
+      <TodayReportForm
+        label={copy.label}
+        fractionDigits={copy.fractionDigits}
+        integer={copy.integer}
+        initial={recordedValue(cycle, kind)}
+        onCancel={() => onOpenChange(false)}
+        onSubmit={onSubmit}
+      />
+    </AppDialog>
+  )
+}
+
+interface TodayReportFormProps {
+  label: string
+  fractionDigits: number
+  integer: boolean
+  initial: number | null
+  onSubmit: (value: number) => Promise<unknown>
+  onCancel: () => void
+}
+
+const TodayReportForm: FC<TodayReportFormProps> = ({
+  label,
+  fractionDigits,
+  integer,
+  initial,
+  onSubmit,
+  onCancel,
+}) => {
+  const valueSchema = (
+    integer ? countValueSchema : weightValueSchema
+  ).nullable()
+  const formError = useFormError()
+  const form = useAppForm({
+    defaultValues: { value: initial },
+    validators: {
+      onSubmit: z.object({
+        value: valueSchema.refine((value) => value != null, 'Wajib diisi'),
+      }),
+    },
+    onSubmit: async ({ value }) => {
+      formError.clear()
+      if (value.value == null) return
+      try {
+        await onSubmit(value.value)
+      } catch (error) {
+        formError.report(error)
+      }
+    },
+  })
+
+  return (
+    <form
+      className="grid gap-3"
+      onSubmit={(event) => {
+        event.preventDefault()
+        void form.handleSubmit()
+      }}
+    >
+      <FormError message={formError.message} />
+      <FieldGroup className="gap-3">
+        <form.AppField name="value">
+          {(field) => (
+            <field.NumberField label={label} fractionDigits={fractionDigits} />
+          )}
+        </form.AppField>
+      </FieldGroup>
+      <div className="flex gap-2">
+        <form.Subscribe selector={(state) => state.isSubmitting}>
+          {(isSubmitting) => (
+            <Button type="submit" size="sm" loading={isSubmitting}>
+              Simpan
+            </Button>
+          )}
+        </form.Subscribe>
+        <Button type="button" size="sm" variant="outline" onClick={onCancel}>
+          Batal
+        </Button>
+      </div>
+    </form>
+  )
+}
+
 function bibisAmount(item: BibisLine | undefined): string {
   if (!item) return '—'
   if (item.fastingReason === 'dadakan') return 'Puasa dadakan, 0 g'
@@ -409,21 +826,23 @@ const PondFacts: FC<PondFactsProps> = ({ cycle }) => {
   return (
     <Popover>
       <PopoverTrigger>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Info kolam"
-            >
-              <Info />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Info kolam</p>
-          </TooltipContent>
-        </Tooltip>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Info kolam"
+              >
+                <Info />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Info kolam</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-80">
         <PopoverHeader className="mb-3">
@@ -453,6 +872,26 @@ const Fact: FC<FactProps> = ({ label, value }) => {
     <div className="flex items-baseline justify-between gap-4">
       <dt className="text-muted-foreground">{label}</dt>
       <dd className="text-right">{value}</dd>
+    </div>
+  )
+}
+
+interface PondHeadingProps {
+  cycle?: KolamCycle
+}
+
+const PondHeading: FC<PondHeadingProps> = ({ cycle }) => {
+  return (
+    <div className="grid gap-1">
+      <div className="flex items-center gap-1">
+        <h1 className="text-2xl font-semibold tracking-tight">
+          {cycle ? `Kolam ${cycle.pondCode}` : 'Kolam'}
+        </h1>
+        {cycle ? <PondFacts cycle={cycle} /> : null}
+      </div>
+      <p className="text-sm text-muted-foreground">
+        Catatan harian, pakan aktual, dan bibis untuk kolam ini.
+      </p>
     </div>
   )
 }

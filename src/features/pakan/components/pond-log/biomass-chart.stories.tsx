@@ -54,6 +54,10 @@ export const Deaths: Story = {
     await expect(
       canvas.getByRole('img', { name: 'Kematian kolam A3' }),
     ).toBeVisible()
-    await expect(canvas.getByText('Ekor per hari, termasuk nol.')).toBeVisible()
+    await expect(
+      canvas.getByText(
+        'Kematian per hari, dalam ekor. Hari dengan nol kematian tetap tampil.',
+      ),
+    ).toBeVisible()
   },
 }

@@ -77,6 +77,7 @@ Optional: load BATCH 1 from the Pakan workbook with `pnpm db:import`. Re-running
 | `pnpm storybook`       | Storybook on port 6006                                                                        |
 | `pnpm build-storybook` | Static Storybook build                                                                        |
 | `pnpm test:stories`    | Run stories in a headless browser                                                             |
+| `pnpm test:unit`       | Run domain tests in Node                                                                      |
 | `pnpm db:up`           | Start Postgres (`docker compose up -d db`)                                                    |
 | `pnpm db:down`         | Stop Compose services                                                                         |
 | `pnpm db:generate`     | Generate the Prisma client                                                                    |
@@ -98,6 +99,7 @@ There is no CI config in the repo. Run the checks that match the change:
 | Types                   | `pnpm typecheck`                                                                |
 | Lint and format         | `pnpm lint` and `pnpm check`                                                    |
 | A component story       | `pnpm exec playwright install chromium` once, then `pnpm test:stories`          |
+| Domain behavior         | `pnpm test:unit`                                                                |
 | A page an operator sees | Storybook with `&full=true`, using the `agent-browser` CLI when it is installed |
 | Production bundle       | `pnpm build`                                                                    |
 

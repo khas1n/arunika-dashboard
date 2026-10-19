@@ -10,6 +10,10 @@ const calendar = new Intl.DateTimeFormat('id-ID', {
   dateStyle: 'medium',
   timeZone: 'UTC',
 })
+const longCalendar = new Intl.DateTimeFormat('id-ID', {
+  dateStyle: 'long',
+  timeZone: 'UTC',
+})
 
 export function formatGrams(value: number | null): string {
   if (value == null) return '—'
@@ -29,6 +33,10 @@ export function formatPercent(value: number | null): string {
 export function formatCalendar(value: string | null): string {
   if (!value) return '—'
   return calendar.format(new Date(`${value}T00:00:00.000Z`))
+}
+
+export function formatLongCalendar(value: string): string {
+  return longCalendar.format(new Date(`${value}T00:00:00.000Z`))
 }
 
 export function formatFcr(value: number | null): string {

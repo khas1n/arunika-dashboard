@@ -65,6 +65,11 @@ export function addDays(date: CalendarDate, days: number): CalendarDate {
   return fromEpochDay(toEpochDay(date) + days)
 }
 
+/** Day of culture. The stocking date is day 1, and a missing day does not move it. */
+export function cultureDay(start: CalendarDate, date: CalendarDate): number {
+  return toEpochDay(date) - toEpochDay(start) + 1
+}
+
 /** The instant a Jakarta calendar day starts. */
 export function jakartaDayStart(date: CalendarDate): Date {
   return new Date(toEpochDay(date) * DAY_MS - JAKARTA_OFFSET_MS)

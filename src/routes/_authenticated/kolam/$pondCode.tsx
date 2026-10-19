@@ -11,6 +11,10 @@ import {
   kolamHeaderQueryOptions,
   kolamOverridesQueryOptions,
 } from '#/features/pakan/api/kolam.queries'
+import {
+  pondDayDraftFn,
+  pondDayExistsFn,
+} from '#/features/pakan/api/kolam.functions'
 import { PondLog } from '#/features/pakan/components/pond-log'
 import { useKolamActions } from '#/features/pakan/hooks/use-kolam-actions'
 import { useKolamPage } from '#/features/pakan/hooks/use-kolam-page'
@@ -19,7 +23,8 @@ const routeApi = getRouteApi('/_authenticated/kolam/$pondCode')
 
 const KolamPage: FC<{ pondCode: string }> = ({ pondCode }) => {
   const page = useKolamPage(pondCode)
-  const { createOverride, revokeOverride, upsertDay } = useKolamActions(pondCode)
+  const { createOverride, revokeOverride, upsertDay } =
+    useKolamActions(pondCode)
   const cycle = page.header.rows.at(0) ?? null
   const bibis = page.bibis.rows.at(0)
   if (!cycle || !bibis) throw notFound()
@@ -41,6 +46,8 @@ const KolamPage: FC<{ pondCode: string }> = ({ pondCode }) => {
       onCreateOverride={createOverride}
       onRevokeOverride={revokeOverride}
       onUpsertDay={upsertDay}
+      onDayExists={(input) => pondDayExistsFn({ data: input })}
+      onLoadDay={(input) => pondDayDraftFn({ data: input })}
     />
   )
 }

@@ -26,7 +26,7 @@ The contract is two Zod factories in `src/lib/page.ts`: `pageQuerySchema(sortId)
 - A header, bibis line, or dadakan list with nothing to show is `rows: []` and `rowCount: 0`. The client does not treat a missing `rows[0]` as a transport error.
 - The feed list moves onto the same factories. Its search field stays on the feed query only.
 - The pond list has one sort, batch order: A3, B3, C3, D3, A6, B6, C6, D6. Alphabetical code is not a sort.
-- The daily log can sort by every visible column. The default is date ascending.
+- The daily log can sort by every visible column. The default is the reporting date, newest first. Equal dates stay in stored order.
 - The puasa dadakan page includes ended overrides. The default sort is active rows first, then ended rows, each group by start date. The user can sort by start date or reason instead, and that sort mixes active and ended rows. Ending one keeps the row. Akhiri is only on an active row.
 - An unknown pond code is not a page. The route answers not found, as it does now.
 - Changing page or sort on one list must not remount the pond screen. Route `pendingComponent` is only for the first open of a pond. After that, each list uses `useQuery` with `keepPreviousData` and shows `isFetching` only on that list while the user is waiting for the new page. Header and bibis keep stable keys and do not refetch on day or dadakan paging.

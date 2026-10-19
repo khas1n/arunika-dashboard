@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { FC, FocusEvent, FormEvent } from 'react'
+import type { ComponentProps, FC, FocusEvent, FormEvent } from 'react'
 import {
   maskitoNumber,
   maskitoParseNumber,
@@ -22,7 +22,7 @@ import { cn } from '#/lib/utils'
 const DECIMAL_SEPARATOR = ','
 const THOUSAND_SEPARATOR = '.'
 
-interface NumberFieldProps {
+interface NumberFieldProps extends ComponentProps<typeof InputGroupInput> {
   label?: string
   ariaLabel?: string
   /** Digits after the decimal comma in the text the operator sees. */
@@ -69,6 +69,7 @@ export const NumberField: FC<NumberFieldProps> = ({
   compact = false,
   suffix,
   selectOnFocus = false,
+  ...props
 }) => {
   const field = useFieldContext<number | null>()
   const invalid = compact
@@ -122,6 +123,7 @@ export const NumberField: FC<NumberFieldProps> = ({
     onBlur: field.handleBlur,
     onFocus,
     onInput,
+    ...props,
   } as const
 
   const control = suffix ? (

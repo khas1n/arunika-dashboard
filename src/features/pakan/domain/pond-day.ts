@@ -7,6 +7,7 @@
  */
 
 import {
+  cultureDay,
   getOperationalFeedGrams,
   getPondFeedingSchedule,
 } from '#/features/pakan/domain/feeding-schedule'
@@ -81,18 +82,30 @@ function calculatedFeedGrams(
   return ((frMin + frMax) / 2) * biomassGrams
 }
 
+function byReportingDate(left: PondDaySource, right: PondDaySource) {
+  if (left.date != null && right.date != null && left.date !== right.date) {
+    return left.date < right.date ? -1 : 1
+  }
+  if (left.date != null && right.date == null) return -1
+  if (left.date == null && right.date != null) return 1
+  return left.doc - right.doc
+}
+
 /**
- * Walks imported days in DOC order. A blank weight blanks that day's
- * population and biomass, and the deaths on that day still count afterward.
- * Initial biomass is the first weight times fish stocked by that date, before
- * deaths, matching the workbook's opening biomass.
+ * Walks dated days in calendar order so a backfilled day sits where it
+ * happened. The number on the row is the calendar day of culture when the
+ * cycle has a stocking date. Stored `doc` only orders a row that has no date.
+ * A blank weight blanks that day's population and biomass, and the deaths on
+ * that day still count afterward. Initial biomass is the first weight times
+ * fish stocked by that date, before deaths.
  */
 export function summarizePondCycle(
   days: readonly PondDaySource[],
   stockings: readonly PondStockingInput[],
   schedule: PondScheduleInput,
+  cultureStart: CalendarDate | null = null,
 ): PondCycleSummary {
-  const ordered = [...days].sort((left, right) => left.doc - right.doc)
+  const ordered = [...days].sort(byReportingDate)
   const rows: PondDayRow[] = []
   let deathsSoFar = 0
   let initialBiomassGrams: number | null = null
@@ -117,7 +130,10 @@ export function summarizePondCycle(
 
     rows.push({
       date: day.date,
-      doc: day.doc,
+      doc:
+        cultureStart != null && day.date != null
+          ? cultureDay(cultureStart, day.date)
+          : day.doc,
       averageWeightGrams: weight,
       frMin: day.frMin,
       frMax: day.frMax,

@@ -215,7 +215,7 @@ The workbook's free-text column `U` is not a model. A later import may turn rows
 
 ## Stocking and mortality
 
-`PondStocking` records every time fish enter a cycle, with `seedSourceId`. The first stocking is the opening count. A later addition is another row, so a pond can have several origins. Jumlah bibit is the sum. `MortalityEvent` holds each death count. Population is stocked minus died. Both are in ekor, not grams.
+`PondStocking` records every time fish enter a cycle, with `seedSourceId`. The first stocking is the opening count and the start of DOC. A later addition is another row, so a pond can have several origins. Jumlah bibit is the sum. `MortalityEvent` holds each death count above zero. Population is stocked minus died. Both are in ekor, not grams. A recorded zero death or zero actual feed does not create an event, because those quantities must stay above zero. `PondDailyRecord.deathsReported` and `feedReported` mark that the day was still reported.
 
 ## Why no ActivityLog
 

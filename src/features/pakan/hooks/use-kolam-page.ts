@@ -19,7 +19,7 @@ import {
 export function useKolamPage(pondCode: string) {
   const dayTable = useServerTableControls({
     pageSize: 25,
-    sorting: [{ id: 'date', desc: false }],
+    sorting: [{ id: 'date', desc: true }],
   })
   const overrideTable = useServerTableControls({
     sorting: [{ id: 'status', desc: false }],

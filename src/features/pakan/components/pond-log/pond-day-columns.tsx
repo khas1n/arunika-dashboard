@@ -36,33 +36,11 @@ export const pondDayColumns = column.columns([
   }),
   column.accessor('frMin', {
     header: 'FR min',
-    cell: ({ row }) => (
-      <DayNumberCell
-        day={row.original}
-        field="frMin"
-        label="FR min"
-        format={formatPercent}
-        fractionDigits={2}
-        scale={100}
-        max={100}
-        suffix="%"
-      />
-    ),
+    cell: ({ getValue }) => formatPercent(getValue()),
   }),
   column.accessor('frMax', {
     header: 'FR max',
-    cell: ({ row }) => (
-      <DayNumberCell
-        day={row.original}
-        field="frMax"
-        label="FR max"
-        format={formatPercent}
-        fractionDigits={2}
-        scale={100}
-        max={100}
-        suffix="%"
-      />
-    ),
+    cell: ({ getValue }) => formatPercent(getValue()),
   }),
   column.accessor('deaths', {
     header: 'Kematian',

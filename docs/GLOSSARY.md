@@ -18,11 +18,11 @@ One paged Kolam read. The pond screen uses a separate list for each of these:
 - pond header (asal bibit, volume, puasa, pakan, jenis ikan, metode budidaya, FCR) — a page of one row
 - today's bibis for that pond
 - puasa dadakan for that pond, including ended rows. Default sort is active first, then ended. Sorting by start date or reason mixes the two. Akhiri is only on an active row.
-- daily log for that pond, sortable by every visible column, defaulting to date ascending
+- daily log for that pond, sortable by every visible column, defaulting to the reporting date, newest first. Equal dates stay in stored order. A refresh keeps the sort the operator picked.
 
 The pond list has one sort: batch order A3, B3, C3, D3, A6, B6, C6, D6.
 
-The pond screen shows one tab at a time. The title is on the left. An info control lists asal bibit, jumlah bibit, volume, puasa, pakan, jenis ikan, and metode budidaya. A strip above the tabs shows today's bibis, total kematian for the active cycle, and FCR, and it stays on every tab. Harian is the daily log. Puasa is puasa dadakan. Grafik holds the biomass line and the daily death line. Catat harian sits on the right when Harian is selected. Catat puasa dadakan sits on the right when Puasa is selected. Another workbook sheet can become another tab later.
+The pond screen shows one tab at a time. The tabs sit beside the pond title. An info control lists asal bibit, jumlah bibit, volume, puasa, pakan, jenis ikan, and metode budidaya. A strip above the tables shows today's bibis, total kematian for the active cycle, and FCR, and it stays on every tab. Harian is the daily log. Puasa is puasa dadakan. Grafik holds the biomass line and the daily death line. Catat sits in the Harian table and opens today's weight, today's deaths, today's actual feed, or a separate historical day. Catat puasa dadakan sits in the Puasa table. Another workbook sheet can become another tab later.
 
 ## Jenis ikan
 
@@ -34,9 +34,21 @@ How a cycle is grown. One `CultivationMethod` row, looked up by `code`. The firs
 
 ## Harian input
 
-A Harian cell edit sets that day's inputs. The whole cell accepts the click, including an empty cell. Enter or Simpan commits. Escape or Batal restores the previous value. The typed value shows immediately. Populasi, biomassa, pakan hitung, pakan operasional, and FCR stay as they are until the server computes them again. Deaths and actual feed replace that date's total.
+A Harian cell edit sets that day's weight, deaths, or actual feed. The whole cell accepts the click, including an empty cell. Enter or Simpan commits. Escape or Batal restores the previous value. The typed value shows immediately. Populasi, biomassa, pakan hitung, pakan operasional, FR, and FCR stay as they are until the server computes them again. Deaths and actual feed replace that date's total. A failed save puts the previous value back.
+
+Today's weight, deaths, and actual feed are three separate reports. Zero counts as recorded. Each report still missing today is its own toast. Closing a toast hides that report for this visit and this Jakarta date. A recorded value, including zero, removes that toast.
+
+Tambah catatan harian writes weight, deaths, and actual feed for one date. Those fields stay closed until a date is chosen, then that date's saved values are loaded. A date that already has a row is replaced only after the operator confirms. A new date is saved without that confirmation. A date before the cycle's stocking date is rejected.
 
 Creating or ending a puasa dadakan is not a list.
+
+## DOC
+
+Day of culture for one cycle. Day 1 is that cycle's earliest stocking date. A later reporting date is the number of calendar days from that stocking date, plus one. A day with no record is not created, and it does not change any other day's DOC. The number stored on the row is only a unique key. The screen shows the calendar DOC.
+
+## FR
+
+The feeding-rate snapshot for a weight. The band is the one whose minimum weight is the greatest minimum still at or below the weight. Stored values are fractions. The screen shows percents. The form and the cells do not accept FR. Saving a weight stores a new snapshot. Changing the band table later does not change older rows. A weight of 0, or a weight below every band, stores no rate.
 
 ## Biomass series
 

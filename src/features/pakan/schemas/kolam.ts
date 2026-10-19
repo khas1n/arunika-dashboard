@@ -63,8 +63,7 @@ export const kolamChartQuerySchema = z
     message: 'Rentang wajib punya awal dan akhir',
   })
   .refine(
-    (value) =>
-      value.from == null || value.to == null || value.to >= value.from,
+    (value) => value.from == null || value.to == null || value.to >= value.from,
     {
       path: ['to'],
       message: 'Hari terakhir tidak boleh sebelum hari pertama',
@@ -99,11 +98,6 @@ const dayMeasurementSchema = z
   .number()
   .nonnegative('Tidak boleh negatif')
   .nullable()
-const dayRateSchema = z
-  .number()
-  .min(0, 'Tidak boleh negatif')
-  .max(1, 'Maksimal 100%')
-  .nullable()
 const dayCountSchema = z
   .number()
   .int('Harus bilangan bulat')
@@ -112,16 +106,43 @@ const dayCountSchema = z
 export const pondDayFormSchema = z.object({
   date: calendarDateSchema,
   averageWeightGrams: dayMeasurementSchema,
-  frMin: dayRateSchema,
-  frMax: dayRateSchema,
   deaths: dayCountSchema,
   actualFeedGrams: dayCountSchema,
 })
 
-export const pondDayWriteSchema = pondDayFormSchema.extend({
+export const pondDayDraftSchema = pondDayFormSchema.omit({ date: true })
+
+const dayTargetSchema = {
   batchPondId: idSchema,
-  create: z.boolean(),
-})
+  date: calendarDateSchema,
+}
+
+export const pondDayPatchSchema = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('weight'),
+    ...dayTargetSchema,
+    averageWeightGrams: dayMeasurementSchema,
+  }),
+  z.object({
+    kind: z.literal('deaths'),
+    ...dayTargetSchema,
+    deaths: dayCountSchema,
+  }),
+  z.object({
+    kind: z.literal('feed'),
+    ...dayTargetSchema,
+    actualFeedGrams: dayCountSchema,
+  }),
+  z.object({
+    kind: z.literal('day'),
+    ...dayTargetSchema,
+    averageWeightGrams: dayMeasurementSchema,
+    deaths: dayCountSchema,
+    actualFeedGrams: dayCountSchema,
+  }),
+])
+
+export const pondDayLookupSchema = z.object(dayTargetSchema)
 
 const fastingLabelSchema = z.enum(['pola', 'dadakan']).nullable()
 
@@ -153,6 +174,10 @@ export const kolamCycleSchema = z.object({
   cultivationMethodName: z.string(),
   fcr: z.number().nullable(),
   totalDeaths: z.number().int(),
+  cultureStart: calendarDateSchema.nullable(),
+  todayWeightGrams: z.number().nullable(),
+  todayDeaths: z.number().int().nullable(),
+  todayFeedGrams: z.number().int().nullable(),
 })
 
 export const bibisLineSchema = z.object({
@@ -199,7 +224,10 @@ export type PondDayQuery = z.infer<typeof pondDayQuerySchema>
 export type KolamPondLink = z.infer<typeof kolamPondLinkSchema>
 export type FastingOverrideInput = z.infer<typeof fastingOverrideInputSchema>
 export type PondDayFormValues = z.infer<typeof pondDayFormSchema>
-export type PondDayWrite = z.infer<typeof pondDayWriteSchema>
+export type PondDayDraft = z.infer<typeof pondDayDraftSchema>
+export type PondDayPatch = z.infer<typeof pondDayPatchSchema>
+export type PondDaySave = PondDayPatch & { notify?: boolean }
+export type PondDayLookup = z.infer<typeof pondDayLookupSchema>
 export type PondDay = z.infer<typeof pondDaySchema>
 export type KolamCycle = z.infer<typeof kolamCycleSchema>
 export type BibisLine = z.infer<typeof bibisLineSchema>

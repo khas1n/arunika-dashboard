@@ -72,7 +72,7 @@ export function defaultPondDayQuery(pondCode: string): PondDayQuery {
     pageIndex: 0,
     pageSize: 25,
     sortId: 'date',
-    sortDesc: false,
+    sortDesc: true,
   }
 }
 

@@ -86,7 +86,11 @@ export function useOptimisticMutation<TVars, TData>(
         typeof options.toastOnError === 'function'
           ? options.toastOnError(vars)
           : options.toastOnError !== false
-      if (report) toast.error(messageFrom(error, options.errorMessage))
+      if (report) {
+        toast.error(messageFrom(error, options.errorMessage), {
+          richColors: true,
+        })
+      }
     },
     onSuccess: (_data, vars, context) => {
       if (generations.current.get(context.key) !== context.generation) return

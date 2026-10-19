@@ -64,7 +64,7 @@ export const BiomassChart: FC<BiomassChartProps> = ({ pondCode, points }) => {
   return (
     <SeriesCard
       title="Biomassa"
-      description="Gram. Hari tanpa biomassa tidak ikut."
+      description="Biomassa kolam dalam gram. Hari tanpa berat tidak ditampilkan."
       emptyLabel="Belum ada biomassa."
       empty={ordered.length === 0}
     >
@@ -110,7 +110,7 @@ export const MortalityChart: FC<MortalityChartProps> = ({
   return (
     <SeriesCard
       title="Kematian"
-      description="Ekor per hari, termasuk nol."
+      description="Kematian per hari, dalam ekor. Hari dengan nol kematian tetap tampil."
       emptyLabel="Belum ada catatan."
       empty={ordered.length === 0}
     >

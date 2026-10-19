@@ -6,6 +6,7 @@ import {
   jakartaDayStart,
   todayInJakarta,
 } from '#/features/pakan/domain/feeding-schedule'
+import { feedingRateForWeight } from '#/features/pakan/domain/feeding-rate'
 import {
   feedConversionRatio,
   projectedCalculatedFeedGrams,
@@ -18,7 +19,8 @@ import type {
   DadakanQuery,
   FastingOverrideInput,
   FastingOverrideItem,
-  PondDayWrite,
+  PondDayLookup,
+  PondDayPatch,
   KolamChart,
   KolamChartQuery,
   KolamCycle,
@@ -43,10 +45,10 @@ export class KolamError extends Error {
 const NOT_FOUND = 'Kolam tidak ditemukan.'
 const OVERRIDE_NOT_FOUND = 'Puasa dadakan tidak ditemukan.'
 const ALREADY_ENDED = 'Puasa dadakan ini sudah diakhiri.'
-const DATE_TAKEN = 'Tanggal ini sudah punya catatan.'
-const DAY_MISSING = 'Catatan harian untuk tanggal ini tidak ada.'
 const NO_FEED = 'Kolam ini belum punya pakan.'
 const DAY_CONFLICT = 'Catatan harian bentrok. Coba lagi.'
+const NOT_STOCKED = 'Kolam ini belum ditebar.'
+const BEFORE_STOCKING = 'Tanggal ini sebelum tebar bibit.'
 
 function decimal(value: number | null, digits: number) {
   if (value == null) return null
@@ -184,6 +186,10 @@ function toCycle(cycle: BuiltCycle): KolamCycle {
     cultivationMethodName: cycle.cultivationMethodName,
     fcr: cycle.fcr,
     totalDeaths: cycle.totalDeaths,
+    cultureStart: cycle.cultureStart,
+    todayWeightGrams: cycle.todayWeightGrams,
+    todayDeaths: cycle.todayDeaths,
+    todayFeedGrams: cycle.todayFeedGrams,
   }
 }
 
@@ -200,8 +206,13 @@ function compareNullable(
 }
 
 function compareDays(left: PondDay, right: PondDay, query: PondDayQuery) {
-  const key = query.sortId
-  return compareNullable(left[key], right[key], query.sortDesc)
+  const primary = compareNullable(
+    left[query.sortId],
+    right[query.sortId],
+    query.sortDesc,
+  )
+  if (primary !== 0) return primary
+  return compareNullable(left.doc, right.doc, false)
 }
 
 function compareOverrides(
@@ -252,9 +263,7 @@ function cycleSummary(cycle: {
     })),
   )
   const sources: PondDaySource[] = cycle.dailyRecords.map((record) => {
-    const date = record.observedOn
-      ? formatJakartaDate(record.observedOn)
-      : null
+    const date = record.observedOn ? formatJakartaDate(record.observedOn) : null
     return {
       date,
       doc: record.doc,
@@ -269,6 +278,12 @@ function cycleSummary(cycle: {
     occurredOn: formatJakartaDate(stocking.occurredOn),
     quantity: stocking.quantity,
   }))
+  const cultureStart = stockings.reduce<string | null>((earliest, stocking) => {
+    if (earliest == null || stocking.occurredOn < earliest) {
+      return stocking.occurredOn
+    }
+    return earliest
+  }, null)
   const schedule = {
     patterns: cycle.fastingPatterns.map((pattern) => ({
       feedDayCount: pattern.feedDayCount,
@@ -284,10 +299,33 @@ function cycleSummary(cycle: {
     })),
   }
   return {
-    summary: summarizePondCycle(sources, stockings, schedule),
+    summary: summarizePondCycle(sources, stockings, schedule, cultureStart),
     sources,
     stockings,
     schedule,
+    cultureStart,
+  }
+}
+
+function todayReport(
+  records: ReadonlyArray<{
+    observedOn: Date | null
+    averageWeightGrams: { toString: () => string } | null
+    deathsReported: boolean
+    feedReported: boolean
+  }>,
+  deaths: ReadonlyMap<string, number>,
+  feed: ReadonlyMap<string, number>,
+  today: string,
+) {
+  const record = records.find(
+    (item) =>
+      item.observedOn != null && formatJakartaDate(item.observedOn) === today,
+  )
+  return {
+    todayWeightGrams: record ? asNumber(record.averageWeightGrams) : null,
+    todayDeaths: record?.deathsReported ? (deaths.get(today) ?? 0) : null,
+    todayFeedGrams: record?.feedReported ? (feed.get(today) ?? 0) : null,
   }
 }
 
@@ -333,7 +371,21 @@ async function loadBuilt() {
   const cycles = sortPonds(batch.batchPonds)
 
   const built = cycles.map((cycle) => {
-    const { summary, sources, stockings, schedule } = cycleSummary(cycle)
+    const { summary, sources, stockings, schedule, cultureStart } =
+      cycleSummary(cycle)
+    const deathsByDay = sumOn(cycle.mortalityEvents)
+    const feedByDay = sumOn(
+      cycle.feedApplications.map((event) => ({
+        occurredAt: event.occurredAt,
+        quantity: event.quantityGrams,
+      })),
+    )
+    const today = todayReport(
+      cycle.dailyRecords,
+      deathsByDay,
+      feedByDay,
+      prepareOn,
+    )
     const totalActual = cycle.feedApplications.reduce(
       (sum, event) => sum + event.quantityGrams,
       0,
@@ -375,6 +427,10 @@ async function loadBuilt() {
         summary.latestBiomassGrams,
       ),
       totalDeaths: summary.rows.reduce((sum, day) => sum + day.deaths, 0),
+      cultureStart,
+      todayWeightGrams: today.todayWeightGrams,
+      todayDeaths: today.todayDeaths,
+      todayFeedGrams: today.todayFeedGrams,
       days: summary.rows,
       sources,
       stockings,
@@ -459,96 +515,182 @@ export async function revokeFastingOverride(id: string, userId: string) {
   })
 }
 
+/** Saved weight, deaths, and actual feed for one reporting date, if a row exists. */
+export async function pondDayDraft(input: PondDayLookup) {
+  const observedOn = new Date(`${input.date}T00:00:00.000Z`)
+  const record = await prisma.pondDailyRecord.findFirst({
+    where: { batchPondId: input.batchPondId, observedOn },
+    select: {
+      averageWeightGrams: true,
+      deathsReported: true,
+      feedReported: true,
+    },
+  })
+  if (!record) return null
+
+  const dayStart = jakartaDayStart(input.date)
+  const dayEnd = jakartaDayStart(addDays(input.date, 1))
+  const occurredAt = { gte: dayStart, lt: dayEnd }
+  const [deaths, feed] = await Promise.all([
+    record.deathsReported
+      ? prisma.mortalityEvent.aggregate({
+          where: { batchPondId: input.batchPondId, occurredAt },
+          _sum: { quantity: true },
+        })
+      : null,
+    record.feedReported
+      ? prisma.feedApplication.aggregate({
+          where: { batchPondId: input.batchPondId, occurredAt },
+          _sum: { quantityGrams: true },
+        })
+      : null,
+  ])
+
+  return {
+    averageWeightGrams: asNumber(record.averageWeightGrams),
+    deaths: deaths?._sum.quantity ?? 0,
+    actualFeedGrams: feed?._sum.quantityGrams ?? 0,
+  }
+}
+
+/** True when this cycle already has a daily row on the reporting date. */
+export async function pondDayExists(input: PondDayLookup) {
+  const observedOn = new Date(`${input.date}T00:00:00.000Z`)
+  const record = await prisma.pondDailyRecord.findFirst({
+    where: { batchPondId: input.batchPondId, observedOn },
+    select: { id: true },
+  })
+  return record != null
+}
+
 /**
- * Writes the day's inputs. Deaths and actual feed replace that date's total
- * instead of appending another event. Derived columns are not stored.
+ * Writes one part of a day, or the whole historical day. Deaths and actual
+ * feed replace that date's events. A recorded zero sets the flag and stores
+ * no event. Feeding rate is snapshotted from the weight. Derived columns
+ * are not stored.
  */
-export async function upsertPondDay(input: PondDayWrite, userId: string) {
+export async function upsertPondDay(input: PondDayPatch, userId: string) {
   const observedOn = new Date(`${input.date}T00:00:00.000Z`)
   const dayStart = jakartaDayStart(input.date)
   const dayEnd = jakartaDayStart(addDays(input.date, 1))
+  const feedGrams =
+    input.kind === 'feed' || input.kind === 'day' ? input.actualFeedGrams : 0
 
   try {
     await prisma.$transaction(async (tx) => {
       const cycle = await tx.batchPond.findUnique({
         where: { id: input.batchPondId },
-        select: { id: true, feedId: true },
+        select: {
+          id: true,
+          feedId: true,
+          stockings: {
+            select: { occurredOn: true },
+            orderBy: { occurredOn: 'asc' },
+            take: 1,
+          },
+        },
       })
       if (!cycle) throw new KolamError(NOT_FOUND)
-
-      const feedId = cycle.feedId
-      if (input.actualFeedGrams > 0 && feedId == null) {
-        throw new KolamError(NO_FEED)
-      }
+      if (cycle.stockings.length === 0) throw new KolamError(NOT_STOCKED)
+      const cultureStart = formatJakartaDate(cycle.stockings[0].occurredOn)
+      if (input.date < cultureStart) throw new KolamError(BEFORE_STOCKING)
+      if (feedGrams > 0 && cycle.feedId == null) throw new KolamError(NO_FEED)
 
       const records = await tx.pondDailyRecord.findMany({
         where: { batchPondId: cycle.id },
         select: { id: true, doc: true, observedOn: true },
       })
-      const existing = records.find(
+      const found = records.find(
         (record) =>
           record.observedOn != null &&
           formatJakartaDate(record.observedOn) === input.date,
       )
-      if (input.create && existing) throw new KolamError(DATE_TAKEN)
-      if (!input.create && !existing) throw new KolamError(DAY_MISSING)
-
-      const snapshot = {
-        averageWeightGrams: decimal(input.averageWeightGrams, 3),
-        frMin: decimal(input.frMin, 4),
-        frMax: decimal(input.frMax, 4),
-      }
-      if (existing) {
-        await tx.pondDailyRecord.update({
-          where: { id: existing.id },
-          data: snapshot,
-        })
-      } else {
-        const doc =
-          records.reduce((max, record) => Math.max(max, record.doc), 0) + 1
-        await tx.pondDailyRecord.create({
+      const record =
+        found ??
+        (await tx.pondDailyRecord.create({
           data: {
             batchPondId: cycle.id,
-            doc,
+            doc: records.reduce((max, item) => Math.max(max, item.doc), 0) + 1,
             observedOn,
-            ...snapshot,
+          },
+          select: { id: true, doc: true, observedOn: true },
+        }))
+
+      if (input.kind === 'weight' || input.kind === 'day') {
+        const rate =
+          input.averageWeightGrams == null
+            ? null
+            : feedingRateForWeight(
+                input.averageWeightGrams,
+                (
+                  await tx.feedingRateBand.findMany({
+                    select: {
+                      minWeightGrams: true,
+                      frMin: true,
+                      frMax: true,
+                    },
+                  })
+                ).map((band) => ({
+                  minWeightGrams: Number(band.minWeightGrams),
+                  frMin: Number(band.frMin),
+                  frMax: Number(band.frMax),
+                })),
+              )
+        await tx.pondDailyRecord.update({
+          where: { id: record.id },
+          data: {
+            averageWeightGrams: decimal(input.averageWeightGrams, 3),
+            frMin: decimal(rate?.frMin ?? null, 4),
+            frMax: decimal(rate?.frMax ?? null, 4),
           },
         })
       }
 
-      await tx.mortalityEvent.deleteMany({
-        where: {
-          batchPondId: cycle.id,
-          occurredAt: { gte: dayStart, lt: dayEnd },
-        },
-      })
-      if (input.deaths > 0) {
-        await tx.mortalityEvent.create({
-          data: {
+      if (input.kind === 'deaths' || input.kind === 'day') {
+        await tx.pondDailyRecord.update({
+          where: { id: record.id },
+          data: { deathsReported: true },
+        })
+        await tx.mortalityEvent.deleteMany({
+          where: {
             batchPondId: cycle.id,
-            quantity: input.deaths,
-            occurredAt: dayStart,
-            userId,
+            occurredAt: { gte: dayStart, lt: dayEnd },
           },
         })
+        if (input.deaths > 0) {
+          await tx.mortalityEvent.create({
+            data: {
+              batchPondId: cycle.id,
+              quantity: input.deaths,
+              occurredAt: dayStart,
+              userId,
+            },
+          })
+        }
       }
 
-      await tx.feedApplication.deleteMany({
-        where: {
-          batchPondId: cycle.id,
-          occurredAt: { gte: dayStart, lt: dayEnd },
-        },
-      })
-      if (input.actualFeedGrams > 0 && feedId != null) {
-        await tx.feedApplication.create({
-          data: {
+      if (input.kind === 'feed' || input.kind === 'day') {
+        await tx.pondDailyRecord.update({
+          where: { id: record.id },
+          data: { feedReported: true },
+        })
+        await tx.feedApplication.deleteMany({
+          where: {
             batchPondId: cycle.id,
-            feedId,
-            quantityGrams: input.actualFeedGrams,
-            occurredAt: dayStart,
-            userId,
+            occurredAt: { gte: dayStart, lt: dayEnd },
           },
         })
+        if (input.actualFeedGrams > 0 && cycle.feedId != null) {
+          await tx.feedApplication.create({
+            data: {
+              batchPondId: cycle.id,
+              feedId: cycle.feedId,
+              quantityGrams: input.actualFeedGrams,
+              occurredAt: dayStart,
+              userId,
+            },
+          })
+        }
       }
     })
   } catch (error) {

@@ -15,8 +15,6 @@ import type { PondDay } from '#/features/pakan/schemas/kolam'
 
 export const pondDayFields = [
   'averageWeightGrams',
-  'frMin',
-  'frMax',
   'deaths',
   'actualFeedGrams',
 ] as const
@@ -45,22 +43,22 @@ const pondDayEdit = createContext<PondDayEdit | null>(null)
 
 const SAVE_FAILED = 'Catatan harian gagal disimpan.'
 
-function cellKey(doc: number, field: PondDayField) {
-  return `${doc}:${field}`
+export function pondDayRowId(day: Pick<PondDay, 'date' | 'doc'>) {
+  return day.date ?? `doc-${day.doc}`
+}
+
+function cellKey(day: Pick<PondDay, 'date' | 'doc'>, field: PondDayField) {
+  return `${pondDayRowId(day)}:${field}`
 }
 
 function withPending(day: PondDay, pending: PendingMap): PondDay {
-  const read = (field: PondDayField) => pending[cellKey(day.doc, field)]?.value
+  const read = (field: PondDayField) => pending[cellKey(day, field)]?.value
   const weight = read('averageWeightGrams')
-  const frMin = read('frMin')
-  const frMax = read('frMax')
   const deaths = read('deaths')
   const actual = read('actualFeedGrams')
   return {
     ...day,
     averageWeightGrams: weight === undefined ? day.averageWeightGrams : weight,
-    frMin: frMin === undefined ? day.frMin : frMin,
-    frMax: frMax === undefined ? day.frMax : frMax,
     deaths: deaths === undefined ? day.deaths : (deaths ?? 0),
     actualFeedGrams: actual === undefined ? day.actualFeedGrams : (actual ?? 0),
   }
@@ -111,7 +109,7 @@ export const PondDayEditProvider: FC<{
   }
 
   const commit = (day: PondDay, field: PondDayField, next: number | null) => {
-    const key = cellKey(day.doc, field)
+    const key = cellKey(day, field)
     const generation = generationRef.current + 1
     generationRef.current = generation
     const nextPending = {
@@ -130,7 +128,9 @@ export const PondDayEditProvider: FC<{
           pendingRef.current = rest
           return rest
         })
-        toast.error(error instanceof Error ? error.message : SAVE_FAILED)
+        toast.error(error instanceof Error ? error.message : SAVE_FAILED, {
+          richColors: true,
+        })
       },
     )
   }
@@ -168,7 +168,7 @@ export const DayNumberCell: FC<DayNumberCellProps> = ({
   emptyValue = null,
 }) => {
   const edit = use(pondDayEdit)
-  const key = cellKey(day.doc, field)
+  const key = cellKey(day, field)
   const pending = edit?.pending[key]
   useEffect(() => {
     if (!edit || !pending) return

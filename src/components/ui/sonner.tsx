@@ -16,6 +16,8 @@ export const Toaster: FC<ToasterProps> = (props) => {
   return (
     <Sonner
       className="toaster group"
+      expand
+      richColors
       position="top-right"
       icons={{
         success: <CircleCheckIcon className="size-4" />,

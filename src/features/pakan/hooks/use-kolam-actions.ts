@@ -1,4 +1,3 @@
-import { useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { QueryKey } from '@tanstack/react-query'
 import { useOptimisticMutation } from '#/hooks/use-optimistic-mutation'
@@ -9,24 +8,22 @@ import {
 } from '#/features/pakan/api/kolam.functions'
 import { kolamQueryKey } from '#/features/pakan/api/kolam.queries'
 import { feedsQueryKey } from '#/features/pakan/api/feed.queries'
+import {
+  cultureDay,
+  todayInJakarta,
+} from '#/features/pakan/domain/feeding-schedule'
 import type {
   FastingOverrideInput,
   FastingOverrideItem,
+  KolamCycle,
   PondDay,
-  PondDayWrite,
+  PondDayPatch,
+  PondDaySave,
 } from '#/features/pakan/schemas/kolam'
 
 interface Page<TRow> {
   rows: Array<TRow>
   rowCount: number
-}
-
-interface DayBaseline {
-  queryKey: QueryKey
-  previous: Pick<
-    PondDay,
-    'averageWeightGrams' | 'frMin' | 'frMax' | 'deaths' | 'actualFeedGrams'
-  >
 }
 
 function pondCodeFrom(key: QueryKey) {
@@ -48,9 +45,103 @@ function isPage<TRow>(value: unknown): value is Page<TRow> {
   )
 }
 
+function queryNumber(key: QueryKey, field: string, fallback: number) {
+  const query = key.at(-1)
+  if (query == null || typeof query !== 'object' || !(field in query)) {
+    return fallback
+  }
+  const value = query[field as keyof typeof query]
+  return typeof value === 'number' ? value : fallback
+}
+
+function queryFlag(key: QueryKey, field: string, fallback: boolean) {
+  const query = key.at(-1)
+  if (query == null || typeof query !== 'object' || !(field in query)) {
+    return fallback
+  }
+  const value = query[field as keyof typeof query]
+  return typeof value === 'boolean' ? value : fallback
+}
+
+function compareNullable(
+  left: string | number | null,
+  right: string | number | null,
+  desc: boolean,
+) {
+  if (left == null && right == null) return 0
+  if (left == null) return 1
+  if (right == null) return -1
+  const order = left < right ? -1 : left > right ? 1 : 0
+  return desc ? -order : order
+}
+
+function sortValue(row: PondDay, sortId: string): string | number | null {
+  const value = row[sortId as keyof PondDay]
+  if (typeof value === 'string' || typeof value === 'number') return value
+  return null
+}
+
+function applyPatch(row: PondDay, values: PondDayPatch): PondDay {
+  if (values.kind === 'weight') {
+    return { ...row, averageWeightGrams: values.averageWeightGrams }
+  }
+  if (values.kind === 'deaths') return { ...row, deaths: values.deaths }
+  if (values.kind === 'feed') {
+    return { ...row, actualFeedGrams: values.actualFeedGrams }
+  }
+  return {
+    ...row,
+    averageWeightGrams: values.averageWeightGrams,
+    deaths: values.deaths,
+    actualFeedGrams: values.actualFeedGrams,
+  }
+}
+
+function blankDay(values: PondDayPatch, doc: number): PondDay {
+  return {
+    date: values.date,
+    doc,
+    averageWeightGrams:
+      values.kind === 'weight' || values.kind === 'day'
+        ? values.averageWeightGrams
+        : null,
+    frMin: null,
+    frMax: null,
+    deaths:
+      values.kind === 'deaths' || values.kind === 'day' ? values.deaths : 0,
+    population: null,
+    biomassGrams: null,
+    calculatedFeedGrams: null,
+    operationalFeedGrams: null,
+    actualFeedGrams:
+      values.kind === 'feed' || values.kind === 'day'
+        ? values.actualFeedGrams
+        : 0,
+    fastingReason: null,
+  }
+}
+
+function patchCycle(cycle: KolamCycle, values: PondDayPatch): KolamCycle {
+  if (cycle.id !== values.batchPondId || values.date !== todayInJakarta()) {
+    return cycle
+  }
+  if (values.kind === 'weight') {
+    return { ...cycle, todayWeightGrams: values.averageWeightGrams }
+  }
+  if (values.kind === 'deaths') return { ...cycle, todayDeaths: values.deaths }
+  if (values.kind === 'feed') {
+    return { ...cycle, todayFeedGrams: values.actualFeedGrams }
+  }
+  return {
+    ...cycle,
+    todayWeightGrams: values.averageWeightGrams,
+    todayDeaths: values.deaths,
+    todayFeedGrams: values.actualFeedGrams,
+  }
+}
+
 export function useKolamActions(pondCode: string) {
   const queryClient = useQueryClient()
-  const dayBaselines = useRef(new Map<string, Array<DayBaseline>>())
 
   const refreshOverrides = () =>
     Promise.all([
@@ -75,75 +166,111 @@ export function useKolamActions(pondCode: string) {
     ])
 
   const upsert = useOptimisticMutation({
-    mutationFn: (values: PondDayWrite) => upsertPondDayFn({ data: values }),
+    mutationFn: (values: PondDaySave) => {
+      const { notify: _notify, ...patch } = values
+      return upsertPondDayFn({ data: patch })
+    },
     scope: (values) => `${values.batchPondId}:${values.date}`,
     queryKey: [...kolamQueryKey, 'days'],
-    successMessage: (values) =>
-      values.create ? 'Catatan harian tersimpan.' : undefined,
-    errorMessage: 'Catatan harian gagal disimpan.',
-    toastOnError: (values) => values.create,
-    invalidate: refreshDay,
-    accept: (values) => {
-      dayBaselines.current.delete(`${values.batchPondId}:${values.date}`)
+    successMessage: (values) => {
+      if (values.notify === false) return undefined
+      return values.kind === 'day'
+        ? 'Catatan harian tersimpan.'
+        : 'Catatan tersimpan.'
     },
+    errorMessage: 'Catatan harian gagal disimpan.',
+    toastOnError: (values) => values.notify !== false,
+    invalidate: refreshDay,
     apply: (values) => {
-      const scope = `${values.batchPondId}:${values.date}`
-      if (!values.create && !dayBaselines.current.has(scope)) {
-        const baselines: Array<DayBaseline> = []
-        for (const [key, data] of queryClient.getQueriesData({
-          queryKey: [...kolamQueryKey, 'days'],
-        })) {
-          if (pondCodeFrom(key) !== pondCode || !isPage<PondDay>(data)) continue
-          const row = data.rows.find((item) => item.date === values.date)
-          if (!row) continue
-          baselines.push({
-            queryKey: key,
-            previous: {
-              averageWeightGrams: row.averageWeightGrams,
-              frMin: row.frMin,
-              frMax: row.frMax,
-              deaths: row.deaths,
-              actualFeedGrams: row.actualFeedGrams,
-            },
-          })
-        }
-        dayBaselines.current.set(scope, baselines)
+      const snapshots: Array<{ queryKey: QueryKey; data: unknown }> = []
+      const dayPages: Array<{ key: QueryKey; data: Page<PondDay> }> = []
+      for (const [key, data] of queryClient.getQueriesData({
+        queryKey: [...kolamQueryKey, 'days'],
+      })) {
+        if (pondCodeFrom(key) !== pondCode || !isPage<PondDay>(data)) continue
+        dayPages.push({ key, data })
       }
-      if (!values.create) {
-        for (const [key, data] of queryClient.getQueriesData({
-          queryKey: [...kolamQueryKey, 'days'],
-        })) {
-          if (pondCodeFrom(key) !== pondCode || !isPage<PondDay>(data)) continue
-          queryClient.setQueryData(key, {
-            ...data,
-            rows: data.rows.map((row) =>
-              row.date === values.date
-                ? {
-                    ...row,
-                    averageWeightGrams: values.averageWeightGrams,
-                    frMin: values.frMin,
-                    frMax: values.frMax,
-                    deaths: values.deaths,
-                    actualFeedGrams: values.actualFeedGrams,
-                  }
-                : row,
-            ),
-          })
+      let cultureStart: string | null = null
+      for (const [key, data] of queryClient.getQueriesData({
+        queryKey: [...kolamQueryKey, 'header'],
+      })) {
+        if (pondCodeFrom(key) !== pondCode || !isPage<KolamCycle>(data)) {
+          continue
         }
+        cultureStart =
+          data.rows.find((cycle) => cycle.id === values.batchPondId)
+            ?.cultureStart ?? cultureStart
       }
+      const doc =
+        cultureStart == null ? 0 : cultureDay(cultureStart, values.date)
+      const known = dayPages.some((page) =>
+        page.data.rows.some((row) => row.date === values.date),
+      )
+
+      for (const page of dayPages) {
+        snapshots.push({ queryKey: page.key, data: page.data })
+        const pageIndex = queryNumber(page.key, 'pageIndex', 0)
+        const pageSize = queryNumber(
+          page.key,
+          'pageSize',
+          page.data.rows.length || 25,
+        )
+        const sortId = (() => {
+          const query = page.key.at(-1)
+          if (
+            query != null &&
+            typeof query === 'object' &&
+            'sortId' in query &&
+            typeof query.sortId === 'string'
+          ) {
+            return query.sortId
+          }
+          return 'date'
+        })()
+        const sortDesc = queryFlag(page.key, 'sortDesc', true)
+        const current = page.data.rows.find((row) => row.date === values.date)
+        let rows = page.data.rows
+        let rowCount = page.data.rowCount
+        if (current) {
+          rows = page.data.rows.map((row) =>
+            row.date === values.date ? applyPatch(row, values) : row,
+          )
+        } else if (!known) {
+          rowCount += 1
+          if (pageIndex === 0) {
+            rows = [...page.data.rows, blankDay(values, doc)]
+              .sort((left, right) => {
+                const primary = compareNullable(
+                  sortValue(left, sortId),
+                  sortValue(right, sortId),
+                  sortDesc,
+                )
+                if (primary !== 0) return primary
+                return compareNullable(left.doc, right.doc, false)
+              })
+              .slice(0, pageSize)
+          }
+        }
+        queryClient.setQueryData(page.key, { ...page.data, rows, rowCount })
+      }
+
+      for (const [key, data] of queryClient.getQueriesData({
+        queryKey: [...kolamQueryKey, 'header'],
+      })) {
+        if (pondCodeFrom(key) !== pondCode || !isPage<KolamCycle>(data)) {
+          continue
+        }
+        snapshots.push({ queryKey: key, data })
+        queryClient.setQueryData(key, {
+          ...data,
+          rows: data.rows.map((cycle) => patchCycle(cycle, values)),
+        })
+      }
+
       return (latest) => {
         if (!latest) return
-        const baselines = dayBaselines.current.get(scope) ?? []
-        dayBaselines.current.delete(scope)
-        for (const baseline of baselines) {
-          const data = queryClient.getQueryData(baseline.queryKey)
-          if (!isPage<PondDay>(data)) continue
-          queryClient.setQueryData(baseline.queryKey, {
-            ...data,
-            rows: data.rows.map((row) =>
-              row.date === values.date ? { ...row, ...baseline.previous } : row,
-            ),
-          })
+        for (const snapshot of snapshots) {
+          queryClient.setQueryData(snapshot.queryKey, snapshot.data)
         }
       }
     },

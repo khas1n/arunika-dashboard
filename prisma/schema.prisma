@@ -306,6 +306,8 @@ model PondDailyRecord {
   tds                Decimal?  @db.Decimal(10, 2)
   dissolvedOxygen    Decimal?  @db.Decimal(5, 2)
   temperatureC       Decimal?  @db.Decimal(5, 2)
+  deathsReported     Boolean   @default(false)
+  feedReported       Boolean   @default(false)
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 

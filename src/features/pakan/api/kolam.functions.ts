@@ -8,6 +8,8 @@ import {
   listKolamDays,
   listKolamOverrides,
   listKolamPonds,
+  pondDayDraft,
+  pondDayExists,
   revokeFastingOverride,
   upsertPondDay,
 } from '#/features/pakan/api/kolam.server'
@@ -17,8 +19,9 @@ import {
   dadakanQuerySchema,
   fastingOverrideIdSchema,
   fastingOverrideInputSchema,
+  pondDayLookupSchema,
+  pondDayPatchSchema,
   pondDayQuerySchema,
-  pondDayWriteSchema,
   pondHeaderQuerySchema,
   pondListQuerySchema,
 } from '#/features/pakan/schemas/kolam'
@@ -67,9 +70,19 @@ export const revokeFastingOverrideFn = createServerFn({ method: 'POST' })
     revokeFastingOverride(data.id, context.session.user.id),
   )
 
+export const pondDayDraftFn = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware])
+  .validator(pondDayLookupSchema)
+  .handler(async ({ data }) => pondDayDraft(data))
+
+export const pondDayExistsFn = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware])
+  .validator(pondDayLookupSchema)
+  .handler(async ({ data }) => pondDayExists(data))
+
 export const upsertPondDayFn = createServerFn({ method: 'POST' })
   .middleware([authMiddleware])
-  .validator(pondDayWriteSchema)
+  .validator(pondDayPatchSchema)
   .handler(async ({ data, context }) =>
     upsertPondDay(data, context.session.user.id),
   )

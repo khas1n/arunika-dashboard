@@ -83,6 +83,7 @@ Environment variables, every script, deployment, and troubleshooting are in [doc
 | `pnpm typecheck`                                  | `tsc --noEmit`                                         |
 | `pnpm lint` / `pnpm check`                        | ESLint, and Prettier check                             |
 | `pnpm test:stories`                               | Stories in a headless browser                          |
+| `pnpm test:unit`                                  | Domain tests in Node                                   |
 | `pnpm storybook`                                  | Storybook on port 6006                                 |
 | `pnpm db:up` / `pnpm db:migrate` / `pnpm db:seed` | Postgres, schema, Nila, Biofloc, administrator         |
 | `pnpm db:import`                                  | Load BATCH 1. Replaces those cycles                    |
@@ -119,7 +120,7 @@ Statuses are evidence from the repo. There are no dates. The full tables are in 
 
 - Any farm is meant to run its own copy. The source is not public yet. There is no farm switcher inside one deployment.
 - One account type. Sign-up in the browser is still off. Accounts come from the seed or `pnpm user:create`.
-- History for days comes from the workbook import. Harian can add a day and edit that day's weight, FR, deaths, and actual feed. Derived columns are calculated again.
+- History for days comes from the workbook import. Harian records today's weight, deaths, and actual feed separately, and can add or replace a historical day. FR is calculated from the weight. Derived columns are calculated again. DOC on screen counts from the cycle's earliest stocking date.
 - `pnpm db:import` replaces BATCH 1 cycles. It does not write puasa dadakan.
 - Several Prisma models (receipts, stock opname, treatments) have no screen yet.
 - Nitro is a beta dependency. There is no CI workflow in the repo.
