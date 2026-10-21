@@ -13,6 +13,9 @@ import {
   summarizePondCycle,
 } from '#/features/pakan/domain/pond-day'
 import type { PondDaySource } from '#/features/pakan/domain/pond-day'
+import {
+  zonedDateTime,
+} from '#/features/pakan/domain/zoned-datetime'
 import type {
   BibisLine,
   BibisQuery,
@@ -29,6 +32,13 @@ import type {
   PondDayQuery,
   PondHeaderQuery,
   PondListQuery,
+  TreatmentLogInput,
+  TreatmentLogItem,
+  TreatmentLogQuery,
+  TreatmentLogUpdate,
+  TreatmentOption,
+  TreatmentPlan,
+  TreatmentPlanQuery,
 } from '#/features/pakan/schemas/kolam'
 import { slicePage } from '#/lib/page'
 
@@ -49,6 +59,10 @@ const NO_FEED = 'Kolam ini belum punya pakan.'
 const DAY_CONFLICT = 'Catatan harian bentrok. Coba lagi.'
 const NOT_STOCKED = 'Kolam ini belum ditebar.'
 const BEFORE_STOCKING = 'Tanggal ini sebelum tebar bibit.'
+const TREATMENT_NOT_FOUND = 'Treatment tidak ditemukan.'
+const LOG_NOT_FOUND = 'Catatan treatment tidak ditemukan.'
+const LOG_REVOKED = 'Catatan treatment ini sudah dihapus.'
+const BAD_WALL_CLOCK = 'Tanggal atau waktu tidak valid.'
 
 function decimal(value: number | null, digits: number) {
   if (value == null) return null
@@ -698,4 +712,180 @@ export async function upsertPondDay(input: PondDayPatch, userId: string) {
     if (prismaErrorCode(error) === 'P2002') throw new KolamError(DAY_CONFLICT)
     throw error
   }
+}
+
+async function activeCycleIdForPond(pondCode: string) {
+  const cycle = await prisma.batchPond.findFirst({
+    where: {
+      pond: { code: pondCode },
+      batch: { name: BATCH_NAME },
+    },
+    select: { id: true },
+  })
+  return cycle?.id ?? null
+}
+
+function toTreatmentLogItem(row: {
+  id: string
+  treatmentId: string
+  quantityGrams: number
+  occurredAt: Date
+  treatment: { code: string; name: string }
+  user: { name: string }
+}): TreatmentLogItem {
+  return {
+    id: row.id,
+    treatmentId: row.treatmentId,
+    treatmentCode: row.treatment.code,
+    treatmentName: row.treatment.name,
+    quantityGrams: row.quantityGrams,
+    occurredAt: row.occurredAt.toISOString(),
+    userName: row.user.name,
+  }
+}
+
+function occurredAtFromWall(input: {
+  date: string
+  time: string
+  timeZone: string
+}) {
+  try {
+    return zonedDateTime(input.date, input.time, input.timeZone)
+  } catch {
+    throw new KolamError(BAD_WALL_CLOCK)
+  }
+}
+
+/** Master list for the treatment picker. */
+export async function listTreatments(): Promise<Array<TreatmentOption>> {
+  const rows = await prisma.treatment.findMany({
+    orderBy: { name: 'asc' },
+    select: { id: true, code: true, name: true },
+  })
+  return rows
+}
+
+/** Planned treatments for this cycle (information only). */
+export async function getKolamTreatmentPlan(
+  query: TreatmentPlanQuery,
+): Promise<TreatmentPlan> {
+  const batchPondId = await activeCycleIdForPond(query.pondCode)
+  if (!batchPondId) throw new KolamError(NOT_FOUND)
+  const rows = await prisma.batchPondTreatment.findMany({
+    where: { batchPondId },
+    orderBy: { treatment: { name: 'asc' } },
+    select: { treatment: { select: { id: true, code: true, name: true } } },
+  })
+  return {
+    pondCode: query.pondCode,
+    treatments: rows.map((row) => row.treatment),
+  }
+}
+
+export async function listKolamTreatments(
+  query: TreatmentLogQuery,
+): Promise<{ rows: Array<TreatmentLogItem>; rowCount: number }> {
+  const batchPondId = await activeCycleIdForPond(query.pondCode)
+  if (!batchPondId) throw new KolamError(NOT_FOUND)
+
+  const occurredAt =
+    query.from != null && query.to != null && query.timeZone != null
+      ? {
+          gte: occurredAtFromWall({
+            date: query.from,
+            time: '00:00',
+            timeZone: query.timeZone,
+          }),
+          lt: occurredAtFromWall({
+            date: addDays(query.to, 1),
+            time: '00:00',
+            timeZone: query.timeZone,
+          }),
+        }
+      : undefined
+
+  const where = {
+    batchPondId,
+    revokedAt: null,
+    ...(occurredAt ? { occurredAt } : {}),
+  }
+  const [rowCount, rows] = await prisma.$transaction([
+    prisma.treatmentLog.count({ where }),
+    prisma.treatmentLog.findMany({
+      where,
+      orderBy: [{ occurredAt: 'desc' }, { id: 'desc' }],
+      skip: query.pageIndex * query.pageSize,
+      take: query.pageSize,
+      include: {
+        treatment: { select: { code: true, name: true } },
+        user: { select: { name: true } },
+      },
+    }),
+  ])
+
+  return {
+    rowCount,
+    rows: rows.map(toTreatmentLogItem),
+  }
+}
+
+export async function createTreatmentLog(
+  input: TreatmentLogInput,
+  userId: string,
+) {
+  const cycle = await prisma.batchPond.findUnique({
+    where: { id: input.batchPondId },
+    select: { id: true },
+  })
+  if (!cycle) throw new KolamError(NOT_FOUND)
+
+  const treatment = await prisma.treatment.findUnique({
+    where: { id: input.treatmentId },
+    select: { id: true },
+  })
+  if (!treatment) throw new KolamError(TREATMENT_NOT_FOUND)
+
+  const occurredAt = occurredAtFromWall(input)
+  await prisma.treatmentLog.create({
+    data: {
+      batchPondId: input.batchPondId,
+      treatmentId: input.treatmentId,
+      quantityGrams: input.quantityGrams,
+      occurredAt,
+      userId,
+    },
+  })
+}
+
+export async function updateTreatmentLog(input: TreatmentLogUpdate) {
+  const log = await prisma.treatmentLog.findUnique({ where: { id: input.id } })
+  if (!log) throw new KolamError(LOG_NOT_FOUND)
+  if (log.revokedAt) throw new KolamError(LOG_REVOKED)
+
+  const treatment = await prisma.treatment.findUnique({
+    where: { id: input.treatmentId },
+    select: { id: true },
+  })
+  if (!treatment) throw new KolamError(TREATMENT_NOT_FOUND)
+
+  const occurredAt = occurredAtFromWall(input)
+  await prisma.treatmentLog.update({
+    where: { id: input.id },
+    data: {
+      treatmentId: input.treatmentId,
+      quantityGrams: input.quantityGrams,
+      occurredAt,
+    },
+  })
+}
+
+export async function revokeTreatmentLog(id: string, userId: string) {
+  const log = await prisma.treatmentLog.findUnique({ where: { id } })
+  if (!log) throw new KolamError(LOG_NOT_FOUND)
+  if (log.revokedAt) throw new KolamError(LOG_REVOKED)
+
+  await prisma.treatmentLog.update({
+    where: { id },
+    data: { revokedAt: new Date(), revokedById: userId },
+  })
 }

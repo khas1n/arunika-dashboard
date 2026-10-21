@@ -2,15 +2,21 @@ import { createServerFn } from '@tanstack/react-start'
 import { authMiddleware } from '#/lib/auth-middleware'
 import {
   createFastingOverride,
+  createTreatmentLog,
   getKolamHeader,
+  getKolamTreatmentPlan,
   listKolamBibis,
   listKolamChart,
   listKolamDays,
   listKolamOverrides,
   listKolamPonds,
+  listKolamTreatments,
+  listTreatments,
   pondDayDraft,
   pondDayExists,
   revokeFastingOverride,
+  revokeTreatmentLog,
+  updateTreatmentLog,
   upsertPondDay,
 } from '#/features/pakan/api/kolam.server'
 import {
@@ -24,6 +30,11 @@ import {
   pondDayQuerySchema,
   pondHeaderQuerySchema,
   pondListQuerySchema,
+  treatmentLogIdSchema,
+  treatmentLogInputSchema,
+  treatmentLogQuerySchema,
+  treatmentLogUpdateSchema,
+  treatmentPlanQuerySchema,
 } from '#/features/pakan/schemas/kolam'
 
 export const listKolamPondsFn = createServerFn({ method: 'GET' })
@@ -85,4 +96,37 @@ export const upsertPondDayFn = createServerFn({ method: 'POST' })
   .validator(pondDayPatchSchema)
   .handler(async ({ data, context }) =>
     upsertPondDay(data, context.session.user.id),
+  )
+
+export const listTreatmentsFn = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware])
+  .handler(async () => listTreatments())
+
+export const getKolamTreatmentPlanFn = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware])
+  .validator(treatmentPlanQuerySchema)
+  .handler(async ({ data }) => getKolamTreatmentPlan(data))
+
+export const listKolamTreatmentsFn = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware])
+  .validator(treatmentLogQuerySchema)
+  .handler(async ({ data }) => listKolamTreatments(data))
+
+export const createTreatmentLogFn = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware])
+  .validator(treatmentLogInputSchema)
+  .handler(async ({ data, context }) =>
+    createTreatmentLog(data, context.session.user.id),
+  )
+
+export const updateTreatmentLogFn = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware])
+  .validator(treatmentLogUpdateSchema)
+  .handler(async ({ data }) => updateTreatmentLog(data))
+
+export const revokeTreatmentLogFn = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware])
+  .validator(treatmentLogIdSchema)
+  .handler(async ({ data, context }) =>
+    revokeTreatmentLog(data.id, context.session.user.id),
   )

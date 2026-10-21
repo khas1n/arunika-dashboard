@@ -17,6 +17,10 @@ export const pondListSortSchema = z.enum(['batch'])
 export const pondHeaderSortSchema = z.enum(['pondCode'])
 export const bibisSortSchema = z.enum(['feedingOn'])
 export const dadakanSortSchema = z.enum(['status', 'startsOn', 'reason'])
+export const pondTabSchema = z.enum(['harian', 'puasa', 'treatment', 'grafik'])
+export const kolamSearchSchema = z.object({
+  tab: pondTabSchema.catch('harian').default('harian'),
+})
 export const pondDaySortSchema = z.enum([
   'date',
   'doc',
@@ -93,6 +97,93 @@ export const fastingOverrideInputSchema = z
   })
 
 export const fastingOverrideIdSchema = z.object({ id: idSchema })
+
+const clockTimeSchema = z
+  .string()
+  .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Waktu wajib diisi')
+
+const timeZoneSchema = z
+  .string()
+  .trim()
+  .min(1, 'Zona waktu wajib diisi')
+  .refine((value) => {
+    try {
+      Intl.DateTimeFormat('en-US', { timeZone: value }).format(new Date())
+      return true
+    } catch {
+      return false
+    }
+  }, 'Zona waktu tidak valid')
+
+export const treatmentLogSortSchema = z.enum(['occurredAt'])
+
+export const treatmentLogQuerySchema = pageQuerySchema(
+  treatmentLogSortSchema,
+)
+  .extend({
+    pondCode: pondCodeSchema,
+    from: calendarDateSchema.optional(),
+    to: calendarDateSchema.optional(),
+    timeZone: timeZoneSchema.optional(),
+  })
+  .refine((value) => (value.from == null) === (value.to == null), {
+    path: ['to'],
+    message: 'Rentang wajib punya awal dan akhir',
+  })
+  .refine(
+    (value) =>
+      value.from == null || value.to == null || value.to >= value.from,
+    {
+      path: ['to'],
+      message: 'Hari terakhir tidak boleh sebelum hari pertama',
+    },
+  )
+
+export const treatmentOptionSchema = z.object({
+  id: idSchema,
+  code: z.string(),
+  name: z.string(),
+})
+
+export const treatmentPlanQuerySchema = z.object({
+  pondCode: pondCodeSchema,
+})
+
+export const treatmentPlanSchema = z.object({
+  pondCode: pondCodeSchema,
+  treatments: z.array(treatmentOptionSchema),
+})
+
+export const treatmentLogInputSchema = z.object({
+  batchPondId: idSchema,
+  treatmentId: z.string().min(1, 'Pilih treatment'),
+  quantityGrams: z
+    .number({ error: 'Jumlah wajib diisi' })
+    .int('Harus bilangan bulat')
+    .min(1, 'Jumlah minimal 1 gram'),
+  date: calendarDateSchema,
+  time: clockTimeSchema,
+  timeZone: timeZoneSchema,
+})
+
+export const treatmentLogUpdateSchema = treatmentLogInputSchema
+  .omit({ batchPondId: true })
+  .extend({ id: idSchema })
+
+export const treatmentLogIdSchema = z.object({ id: idSchema })
+
+export const treatmentLogItemSchema = z.object({
+  id: idSchema,
+  treatmentId: idSchema,
+  treatmentCode: z.string(),
+  treatmentName: z.string(),
+  quantityGrams: z.number().int(),
+  occurredAt: z.string().datetime(),
+  userName: z.string(),
+})
+
+export const treatmentLogPageSchema = pageSchema(treatmentLogItemSchema)
+export const treatmentOptionsSchema = z.array(treatmentOptionSchema)
 
 const dayMeasurementSchema = z
   .number()
@@ -235,3 +326,12 @@ export type FastingOverrideItem = z.infer<typeof fastingOverrideItemSchema>
 export type KolamChartQuery = z.infer<typeof kolamChartQuerySchema>
 export type KolamChartPoint = z.infer<typeof kolamChartPointSchema>
 export type KolamChart = z.infer<typeof kolamChartSchema>
+export type TreatmentLogQuery = z.infer<typeof treatmentLogQuerySchema>
+export type TreatmentLogInput = z.infer<typeof treatmentLogInputSchema>
+export type TreatmentLogUpdate = z.infer<typeof treatmentLogUpdateSchema>
+export type TreatmentLogItem = z.infer<typeof treatmentLogItemSchema>
+export type TreatmentOption = z.infer<typeof treatmentOptionSchema>
+export type TreatmentPlanQuery = z.infer<typeof treatmentPlanQuerySchema>
+export type TreatmentPlan = z.infer<typeof treatmentPlanSchema>
+export type PondTab = z.infer<typeof pondTabSchema>
+export type KolamSearch = z.infer<typeof kolamSearchSchema>
