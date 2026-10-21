@@ -92,7 +92,9 @@ Husky runs commitlint on `commit-msg`. Messages follow Conventional Commits (`@c
 
 ## Checks
 
-There is no CI config in the repo. Run the checks that match the change:
+There is no GitHub Actions workflow. A workflow on `push` to `main` or on `pull_request` would run on GitHub as soon as it is pushed. That waits until more of the fish-farm roadmap is in place. Run the checks locally. Story tests need Playwright: `pnpm exec playwright install chromium` once, then `pnpm test:stories`.
+
+Run the checks that match the change:
 
 | Change                  | Command                                                                         |
 | ----------------------- | ------------------------------------------------------------------------------- |

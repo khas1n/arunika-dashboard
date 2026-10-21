@@ -6,7 +6,7 @@ What Arunika is for, what the app does today, and what is still a proposal. Stat
 
 A fish farm's daily record is easy to lose when it lives in a workbook. Growth, feed, fasting, and stock then disagree with each other, and a later question ("what was biomass on this pond, and what did we actually feed?") takes a manual reconstruction.
 
-Arunika is that app. A farm runs its own copy. Opening the source, so any farm can use it, is the plan. This repository is not public yet, and it has no customers, revenue, or usage numbers.
+Arunika is that app. It is being built for our own eight-pond tilapia farm. Biofloc is a cultivation method we are trying on that farm. The software has not shown that the method, or the app, improves harvest quality. A farm is meant to run its own copy. Opening the source is the plan, and a license has not been chosen, so reuse is not permitted yet. Broader adoption is not established. There are no customers, revenue, or usage numbers.
 
 ## Who it is for
 
@@ -63,7 +63,7 @@ These are implemented, not proposals. Detail is in [GLOSSARY.md](GLOSSARY.md), [
 
 ## Decisions
 
-1. The app is for any fish farm. Each farm runs its own copy. Opening the source is planned. The repository is not public yet.
+1. The app is for any fish farm. Each farm runs its own copy. Opening the source is planned. A license has not been chosen, so the source is not open for reuse yet.
 2. There is one account type. No read-only role and no technician role.
 3. The day's work is added and edited in the app, including deaths and the other things the farm does. The first shape is a form. A later shape can be a list of what that farm records that day. The workbook import remains how BATCH 1 history arrived.
 4. Fish purchases and sales belong in this app. They are not built.

@@ -14,32 +14,32 @@ The README keeps the short version. This file is the detail.
 
 ## Phase 1 — Foundation
 
-| Item                                              | Status    | Evidence                                                                                    |
-| ------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------- |
-| Username and password sessions, no public sign-up | Completed | Better Auth, seed, `pnpm user:create`                                                       |
-| SPA shell, profile, settings                      | Completed | Routes under `src/routes/_authenticated/`                                                   |
-| Postgres, Prisma, Docker Compose app image        | Completed | `prisma/`, `docker-compose` used by the db scripts                                          |
-| Storybook next to components, editor rules        | Completed | `*.stories.tsx`, `.cursor/rules/`                                                           |
-| Product, architecture, and engineering docs       | Completed | This `docs/` set                                                                            |
-| One account type                                  | Completed | No roles in the schema or the screens. Decided: every signed-in person can do the same work |
-| Open source release                               | Planned   | Decided. The repository is not public yet                                                   |
-| Interface translations                            | Planned   | Screen copy is Indonesian. No translation catalog                                           |
-| Continuous integration                            | Proposed  | No workflow file under `.github/`                                                           |
-| User administration screen                        | Proposed  | Users are created from the CLI. Browser sign-up stays off                                   |
+| Item                                              | Status    | Evidence                                                                                                                                               |
+| ------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Username and password sessions, no public sign-up | Completed | Better Auth, seed, `pnpm user:create`                                                                                                                  |
+| SPA shell, profile, settings                      | Completed | Routes under `src/routes/_authenticated/`                                                                                                              |
+| Postgres, Prisma, Docker Compose app image        | Completed | `prisma/`, `docker-compose` used by the db scripts                                                                                                     |
+| Storybook next to components, editor rules        | Completed | `*.stories.tsx`, `.cursor/rules/`                                                                                                                      |
+| Product, architecture, and engineering docs       | Completed | This `docs/` set                                                                                                                                       |
+| One account type                                  | Completed | No roles in the schema or the screens. Decided: every signed-in person can do the same work                                                            |
+| Open source release                               | Planned   | Decided as a direction. No `LICENSE` file, so reuse is not permitted yet                                                                               |
+| Interface translations                            | Planned   | Screen copy is Indonesian. No translation catalog                                                                                                      |
+| Continuous integration                            | Proposed  | No workflow file. A file under `.github/workflows/` would run on GitHub as soon as it is pushed. Deferred until more of the fish-farm work is in place |
+| User administration screen                        | Proposed  | Users are created from the CLI. Browser sign-up stays off                                                                                              |
 
 ## Phase 2 — Core fish-farm operations
 
-| Item                                                              | Status    | Evidence                                                                                                                                                |
-| ----------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Feed names on Beranda, delete blocked when the feed is used       | Completed | `src/features/pakan` feed list                                                                                                                          |
-| Pond navigation and BATCH 1 history import                        | Completed | Kolam routes, `pnpm db:import`                                                                                                                          |
-| Fish species and cultivation method on the cycle                  | Completed | `FishSpecies` and `CultivationMethod`. Kolam header shows the names. First rows: Nila, Biofloc                                                          |
-| Daily log, Grafik for the whole cycle, FCR, bibis, puasa dadakan | Completed | Kolam page and domain functions                                                                                                                         |
-| Add and edit a day's work, including deaths, in a form            | Completed | Today's weight, deaths, and actual feed are separate. A historical day replaces an existing date only after confirmation. FR is calculated from the weight. Inline edit covers berat, kematian, and pakan aktual. Derived columns are calculated again. A farm-specific checklist is a later shape |
-| Feed receipts, stock opname, and on-hand quantity as screens      | Proposed  | Models exist. The UI does not record them                                                                                                               |
-| Treatment records as a screen                                     | Completed | Treatment tab on Kolam. Soft revoke. Browser IANA zone for wall clock; UTC stored                                                                        |
-| Fish purchasing and sales, in this app                            | Planned   | Decided. No model and no screen                                                                                                                         |
-| Water quality                                                     | Proposed  | No model                                                                                                                                                |
+| Item                                                             | Status    | Evidence                                                                                                                                                                                                                                                                                           |
+| ---------------------------------------------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Feed names on Beranda, delete blocked when the feed is used      | Completed | `src/features/pakan` feed list                                                                                                                                                                                                                                                                     |
+| Pond navigation and BATCH 1 history import                       | Completed | Kolam routes, `pnpm db:import`                                                                                                                                                                                                                                                                     |
+| Fish species and cultivation method on the cycle                 | Completed | `FishSpecies` and `CultivationMethod`. Kolam header shows the names. First rows: Nila, Biofloc                                                                                                                                                                                                     |
+| Daily log, Grafik for the whole cycle, FCR, bibis, puasa dadakan | Completed | Kolam page and domain functions                                                                                                                                                                                                                                                                    |
+| Add and edit a day's work, including deaths, in a form           | Completed | Today's weight, deaths, and actual feed are separate. A historical day replaces an existing date only after confirmation. FR is calculated from the weight. Inline edit covers berat, kematian, and pakan aktual. Derived columns are calculated again. A farm-specific checklist is a later shape |
+| Feed receipts, stock opname, and on-hand quantity as screens     | Proposed  | Models exist. The UI does not record them                                                                                                                                                                                                                                                          |
+| Treatment records as a screen                                    | Completed | Treatment tab on Kolam. Soft revoke. Browser IANA zone for wall clock; UTC stored                                                                                                                                                                                                                  |
+| Fish purchasing and sales, in this app                           | Planned   | Decided. No model and no screen                                                                                                                                                                                                                                                                    |
+| Water quality                                                    | Proposed  | No model                                                                                                                                                                                                                                                                                           |
 
 Adding and editing a day's inputs is on the Harian log. A farm-specific list of what to record is still a later shape. Fish purchases and sales follow in this app. Stock counts and treatments stay candidates.
 
@@ -47,7 +47,7 @@ Adding and editing a day's inputs is on the Harian log. A farm-specific list of 
 
 | Item                                             | Status    | Evidence                                       |
 | ------------------------------------------------ | --------- | ---------------------------------------------- |
-| FCR and biomass on the pond                      | Completed | FCR on the Kolam strip; biomass on Grafik       |
+| FCR and biomass on the pond                      | Completed | FCR on the Kolam strip; biomass on Grafik      |
 | Beranda beyond user and session counts           | Proposed  | `getDashboardSummary` returns those two counts |
 | Harvest, cost, and reminders                     | Proposed  | Not modeled                                    |
 | More reports after someone uses the daily record | Proposed  | No feedback channel is set up in the repo      |
@@ -76,3 +76,5 @@ This track is how the software is built. It is not an AI feature in the farm app
 ## What not to treat as a promise
 
 A row in Proposed is a candidate. Planned rows are decided and not built. This file does not assign an owner or a date. The remaining product question is which industry, if any, comes after fish. See [product.md](product.md).
+
+The source is not open for reuse until a `LICENSE` file exists. "Open source release" stays Planned for that reason. Do not describe biofloc, or this app, as a proven improvement in harvest quality.

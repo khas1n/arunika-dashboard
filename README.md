@@ -1,48 +1,55 @@
 # Arunika Dashboard
 
-Arunika is a fish-farm app for the life of a pond: growth, feed, and the work of the day. A farm runs it for itself. The repository is planned to be open source, so any farm can do the same.
+Arunika Dashboard keeps a fish farm's pond record in one app: growth, feed, fasting, treatments, and the work of the day. It is being built for our own eight-pond tilapia farm, where we are also trying biofloc. A farm is meant to run its own copy.
 
-This tree is the application. There is no hosted service and no published usage numbers.
+The app is actively developed. A license has not been chosen, so this repository is not open source yet and reuse is not permitted. There is no hosted demo, and no other farm has been onboarded.
+
+## What you are looking at
+
+![Treatment timeline for pond A3, using sample rows from the Pond Log story](docs/screenshots/pond-log-treatment.png)
+
+Treatment timeline on a pond page. The rows are Storybook fixtures, not an export of the live farm. More views are in the [screenshot gallery](docs/screenshots/README.md). A click-by-click walkthrough is in [docs/demo.md](docs/demo.md).
 
 ## Problem
 
-Pond history, feed, and the day's work are easy to split across a workbook. Growth and feed then have to be reconstructed by hand. Arunika keeps that record in one app a farm can run on its own.
+Daily pond history is easy to lose when it lives in a workbook. Growth, feed, fasting, and stock then have to be reconstructed by hand. Arunika is the app we are building so that record stays in one place. That is the motivation. It is not a measured claim about other farms.
 
-## Vision
+## Features
 
-The long-term direction is one system for farm operations: production, inventory, purchasing, sales, and the daily record. Fish farming is the first industry. Poultry, vegetables, and other livestock are later candidates, not models in this codebase. Shared ideas that already exist are a production cycle, daily snapshots, and append-only events. Copying that shape to another industry is a future design. See [docs/architecture.md](docs/architecture.md).
+Status words match [docs/roadmap.md](docs/roadmap.md). A row is included only when the code or those docs support it.
 
-There is one kind of account. Anyone who can sign in can do the same work. Screen copy is Indonesian today. Translations are planned, so the language is not fixed.
-
-## What the app does now
-
-- Sign in with a username and password. Email is stored on the account and is not the login field. Public sign-up is disabled. The first administrator is created by the database seed.
-- Beranda shows user and active-session counts, and the jenis pakan list. A feed that is already used cannot be deleted.
-- Kolam opens each pond in batch order. Cycle facts sit in an info control. Today's bibis, total kematian, and FCR stay above the tabs. Harian is the paged daily log. Puasa records and ends puasa dadakan. Treatment is the treatment timeline for the cycle. Grafik shows biomass and daily deaths for this pond, for the whole cycle until a range is applied.
-- Profil shows the session. Pengaturan stores theme and sidebar in the browser.
-- BATCH 1 history is loaded with `pnpm db:import` from the Pakan workbook. That script is not an upload screen.
-
-The daily log, deaths, biomass, and FCR are computed from stored events. Adding and editing that day in the app, including deaths and the rest of the farm's work, is the next recording flow. A farm-specific list of what to record is a later shape of the same flow. Fish purchases and sales belong in this app and are not built yet. Detail is in [docs/product.md](docs/product.md).
+| Feature                              | Status      | Description                                                                                                                                                  |
+| ------------------------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Sign-in                              | Implemented | Username and password. Email is stored and is not the login field. Public sign-up is off.                                                                    |
+| Beranda                              | Partial     | User count, unexpired session count, and the feed-name list. Unused feeds can be deleted. Not an operations dashboard.                                       |
+| Kolam daily log                      | Implemented | Today's weight, deaths, and actual feed, plus a historical day that replaces an existing date only after confirmation. Derived figures are calculated again. |
+| Puasa dadakan                        | Implemented | Record or end an exception fast. The recurring pattern is imported, not edited on screen.                                                                    |
+| Bibis                                | Partial     | Today's feed-to-prepare is shown. It is not entered in the UI.                                                                                               |
+| Treatment log                        | Implemented | Timeline for the cycle, with add, edit, soft revoke, a date range, and infinite scroll. Planned treatments are labels only.                                  |
+| Grafik                               | Implemented | Biomass and that day's deaths for the active cycle. An empty range is the whole cycle.                                                                       |
+| Feed stock                           | Partial     | Receipts, applications, and stock counts are models. The screen is the feed-name list only.                                                                  |
+| Fish purchasing and sales            | Planned     | Decided for this app. No model and no screen.                                                                                                                |
+| Water quality, harvest, cost, alerts | Proposed    | Not modeled.                                                                                                                                                 |
+| Translations                         | Planned     | Screen copy is Indonesian. There is no translation catalog.                                                                                                  |
+| Open-source license                  | Planned     | Not chosen. Do not treat the source as reusable.                                                                                                             |
 
 ## Stack
 
 | Piece                                                                                  | Role                                         |
 | -------------------------------------------------------------------------------------- | -------------------------------------------- |
 | [TanStack Start](https://tanstack.com/start) and [Router](https://tanstack.com/router) | File routes, server functions, selective SSR |
-| [TanStack Query](https://tanstack.com/query)                                           | Server cache                                 |
-| [TanStack Form](https://tanstack.com/form)                                             | Login and pakan forms                        |
-| [TanStack Table](https://tanstack.com/table) and Virtual                               | Tables                                       |
-| [TanStack Charts](https://tanstack.com/charts)                                         | Biomass line                                 |
-| [React 19](https://react.dev) and the React Compiler                                   | UI                                           |
+| [TanStack Query](https://tanstack.com/query), Form, Table, Charts                      | Server cache, forms, tables, biomass chart   |
+| [React 19](https://react.dev)                                                          | UI, with the React Compiler                  |
 | [Tailwind CSS 4](https://tailwindcss.com) and [shadcn/ui](https://ui.shadcn.com)       | Styling and primitives                       |
-| [Zustand 5](https://zustand.docs.pmnd.rs)                                              | Theme and sidebar                            |
+| [Zustand 5](https://zustand.docs.pmnd.rs)                                              | Theme and sidebar, in the browser            |
 | [Better Auth](https://www.better-auth.com)                                             | Username and password sessions               |
 | [Prisma 7](https://www.prisma.io) and PostgreSQL 18                                    | Database                                     |
-| [Storybook 10](https://storybook.js.org) and Vitest                                    | Component stories                            |
+| [Zod 4](https://zod.dev)                                                               | Request and response schemas                 |
+| [Storybook 10](https://storybook.js.org) and Vitest                                    | Stories and domain tests                     |
 | [Nitro](https://nitro.build)                                                           | Production Node server (beta pin)            |
 | pnpm 11.4.0 and Node 24                                                                | Package manager and runtime                  |
 
-Pages render in the browser. The server reads the session on the first request and redirects. Private data goes through `authMiddleware` on server functions. Detail is in [docs/architecture.md](docs/architecture.md).
+Pages render in the browser. The first request can still read the session and redirect. Private data goes through `authMiddleware` on server functions. Detail is in [docs/architecture.md](docs/architecture.md).
 
 ## Quick start
 
@@ -62,7 +69,7 @@ Generate a secret and put it in `BETTER_AUTH_SECRET`:
 pnpm dlx @better-auth/cli secret
 ```
 
-Set `SEED_ADMIN_PASSWORD` in `.env`. The seed refuses to run when that value is empty.
+Set `SEED_ADMIN_PASSWORD` in `.env`. The seed refuses to run when that value is empty. Do not commit `.env` or paste the password into docs.
 
 ```bash
 pnpm install
@@ -72,22 +79,31 @@ pnpm db:seed
 pnpm dev
 ```
 
-Open http://localhost:3000 and sign in with `SEED_ADMIN_USERNAME` (default `admin`) and the password you set.
+Open http://localhost:3000 and sign in with `SEED_ADMIN_USERNAME` (default `admin`) and the password you set. The seed creates Nila, Biofloc, and that account. It does not create pond history. `pnpm db:import` loads BATCH 1 from the workbook in this repo and replaces those cycles.
 
-Environment variables, every script, deployment, and troubleshooting are in [docs/development.md](docs/development.md). `.env` is gitignored. `.env.example` is the template. Do not commit secrets.
+Every script, the environment table, and troubleshooting are in [docs/development.md](docs/development.md).
 
-| Script                                            | What it does                                           |
-| ------------------------------------------------- | ------------------------------------------------------ |
-| `pnpm dev`                                        | Dev server on port 3000                                |
-| `pnpm build` / `pnpm start`                       | Production build, then `node .output/server/index.mjs` |
-| `pnpm typecheck`                                  | `tsc --noEmit`                                         |
-| `pnpm lint` / `pnpm check`                        | ESLint, and Prettier check                             |
-| `pnpm test:stories`                               | Stories in a headless browser                          |
-| `pnpm test:unit`                                  | Domain tests in Node                                   |
-| `pnpm storybook`                                  | Storybook on port 6006                                 |
-| `pnpm db:up` / `pnpm db:migrate` / `pnpm db:seed` | Postgres, schema, Nila, Biofloc, administrator         |
-| `pnpm db:import`                                  | Load BATCH 1. Replaces those cycles                    |
-| `pnpm user:create`                                | Add a user who can sign in                             |
+| Script                                            | What it does                                                                 |
+| ------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `pnpm dev`                                        | Dev server on port 3000                                                      |
+| `pnpm build` / `pnpm start`                       | Production build, then `node .output/server/index.mjs`                       |
+| `pnpm typecheck`                                  | `tsc --noEmit`                                                               |
+| `pnpm lint` / `pnpm check`                        | ESLint, and Prettier check                                                   |
+| `pnpm test:unit`                                  | Domain tests in Node. The treatment server test skips without `DATABASE_URL` |
+| `pnpm test:stories`                               | Stories in a headless browser. Local; needs Playwright                       |
+| `pnpm storybook`                                  | Storybook on port 6006                                                       |
+| `pnpm db:up` / `pnpm db:migrate` / `pnpm db:seed` | Postgres, schema, Nila, Biofloc, administrator                               |
+| `pnpm db:import`                                  | Load BATCH 1. Replaces those cycles                                          |
+| `pnpm user:create`                                | Add a user who can sign in                                                   |
+
+## Status and limits
+
+- Built for our farm. Eight ponds, tilapia, and a biofloc experiment. The app does not claim a better harvest.
+- One account type. Anyone who can sign in can do the same work. There is no farm switcher.
+- History for BATCH 1 comes from the workbook import. Re-running `pnpm db:import` replaces those cycles and does not write puasa dadakan.
+- Nitro is a beta dependency.
+- Checks run locally: `pnpm lint`, `pnpm typecheck`, `pnpm test:unit`, and `pnpm build`. There is no GitHub Actions workflow. Story tests stay local.
+- Open product questions are in [docs/product.md](docs/product.md).
 
 ## Project layout
 
@@ -99,51 +115,23 @@ src/components/layout/ app shell
 src/components/shared/ used by more than one feature
 prisma/                schema, migrations, seed
 scripts/               import and user creation
-docs/                  product, architecture, roadmap, engineering
+docs/                  product, architecture, roadmap, demo
 ```
 
 Imports go one way: routes, then features, then shared folders. A feature does not import another feature or a route. Import with the `#/` alias. `*.server.ts` is server-only. `*.functions.ts` holds `createServerFn` wrappers.
 
-## Roadmap
+## Community
 
-Statuses are evidence from the repo. There are no dates. The full tables are in [docs/roadmap.md](docs/roadmap.md).
+| Doc                                                      | Purpose                                         |
+| -------------------------------------------------------- | ----------------------------------------------- |
+| [CONTRIBUTING.md](CONTRIBUTING.md)                       | How to set up and open a change                 |
+| [SECURITY.md](SECURITY.md)                               | How to report a vulnerability                   |
+| [docs/demo.md](docs/demo.md)                             | Walkthrough of the working screens              |
+| [docs/screenshots/README.md](docs/screenshots/README.md) | Gallery and how the images were captured        |
+| [docs/roadmap.md](docs/roadmap.md)                       | What is shipped, in progress, and only proposed |
+| [docs/development.md](docs/development.md)               | Setup, scripts, checks                          |
+| [docs/architecture.md](docs/architecture.md)             | Request path, data, security                    |
+| [docs/product.md](docs/product.md)                       | Problem, users, and open questions              |
+| [docs/ai-engineering.md](docs/ai-engineering.md)         | How agents should change this repo              |
 
-| Phase                       | Now                                                                                                                                      |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Foundation               | Sessions, shell, Postgres, and stories are in place. One account type. Open source, translations, and CI are planned                     |
-| 2. Fish-farm operations     | Feed names, imported history, biomass, bibis, puasa dadakan, and Harian add and edit work. Stock, treatments, and fish sales are planned |
-| 3. Operational intelligence | FCR and biomass are on the pond. Beranda is still user and session counts                                                                |
-| 4. Other industries         | Not chosen yet. The code is a fish-farm app                                                                                              |
-| Engineering workflow        | Cursor rules, Intent skills, and [docs/ai-engineering.md](docs/ai-engineering.md)                                                        |
-
-## Status and limits
-
-- Any farm is meant to run its own copy. The source is not public yet. There is no farm switcher inside one deployment.
-- One account type. Sign-up in the browser is still off. Accounts come from the seed or `pnpm user:create`.
-- History for days comes from the workbook import. Harian records today's weight, deaths, and actual feed separately, and can add or replace a historical day. FR is calculated from the weight. Derived columns are calculated again. DOC on screen counts from the cycle's earliest stocking date.
-- `pnpm db:import` replaces BATCH 1 cycles. It does not write puasa dadakan.
-- Several Prisma models (receipts, stock opname, treatments) have no screen yet.
-- Nitro is a beta dependency. There is no CI workflow in the repo.
-- Open product questions are listed in [docs/product.md](docs/product.md).
-
-## AI-assisted development
-
-Cursor and Claude Code share one workflow: [docs/ai-engineering.md](docs/ai-engineering.md). Cursor rules live in `.cursor/rules/`. Claude Code starts at [CLAUDE.md](CLAUDE.md). TanStack library skills load through `pnpm exec intent`. This is how the software is written. It is not a feature of the farm product.
-
-## Documentation
-
-| Doc                                                                                            | Purpose                                                |
-| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| [docs/product.md](docs/product.md)                                                             | Problem, users, workflows, assumptions, open questions |
-| [docs/architecture.md](docs/architecture.md)                                                   | Stack, request path, data, security, limits            |
-| [docs/development.md](docs/development.md)                                                     | Setup, scripts, checks, deploy, troubleshooting        |
-| [docs/roadmap.md](docs/roadmap.md)                                                             | Phases and status                                      |
-| [docs/ai-engineering.md](docs/ai-engineering.md)                                               | Agent workflow, gates, boundaries                      |
-| [docs/GLOSSARY.md](docs/GLOSSARY.md)                                                           | Pakan words                                            |
-| [docs/pakan-database-design.md](docs/pakan-database-design.md)                                 | Domain model                                           |
-| [docs/pakan-xlsx-analysis.md](docs/pakan-xlsx-analysis.md)                                     | Workbook study                                         |
-| [docs/adr/0001-kolam-reads-are-offset-pages.md](docs/adr/0001-kolam-reads-are-offset-pages.md) | List contract                                          |
-
-## Contributing
-
-Match the conventions in `.cursor/rules/`. Screen copy is Indonesian until translations exist. Keep a new string in the component. Add a Storybook story next to a component you change. Run `pnpm typecheck` and, for a story change, `pnpm test:stories`. Commit messages follow Conventional Commits. Do not commit `.env` or a password.
+There is no `LICENSE` file. Do not copy, modify, or redistribute this source until one is added.

@@ -1,14 +1,10 @@
+/* eslint-disable @typescript-eslint/consistent-type-imports --
+   typeof import() keeps the database module out of collection when
+   DATABASE_URL is unset. A value import would fail env validation. */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import {
-  createTreatmentLog,
-  KolamError,
-  listKolamTreatments,
-  listTreatments,
-  revokeTreatmentLog,
-  updateTreatmentLog,
-} from '#/features/pakan/api/kolam.server'
-import { prisma } from '#/lib/db.server'
 
+// Import the server only inside the suite. A missing DATABASE_URL must skip
+// the file instead of failing env validation while the suite is collected.
 const hasDb = Boolean(process.env.DATABASE_URL)
 
 describe.skipIf(!hasDb)('treatment log server', () => {
@@ -16,8 +12,24 @@ describe.skipIf(!hasDb)('treatment log server', () => {
   let treatmentId = ''
   let userId = ''
   const createdIds: Array<string> = []
+  let prisma!: typeof import('#/lib/db.server').prisma
+  let createTreatmentLog!: typeof import('#/features/pakan/api/kolam.server').createTreatmentLog
+  let listKolamTreatments!: typeof import('#/features/pakan/api/kolam.server').listKolamTreatments
+  let listTreatments!: typeof import('#/features/pakan/api/kolam.server').listTreatments
+  let revokeTreatmentLog!: typeof import('#/features/pakan/api/kolam.server').revokeTreatmentLog
+  let updateTreatmentLog!: typeof import('#/features/pakan/api/kolam.server').updateTreatmentLog
+  let KolamError!: typeof import('#/features/pakan/api/kolam.server').KolamError
 
   beforeAll(async () => {
+    const server = await import('#/features/pakan/api/kolam.server')
+    prisma = (await import('#/lib/db.server')).prisma
+    createTreatmentLog = server.createTreatmentLog
+    listKolamTreatments = server.listKolamTreatments
+    listTreatments = server.listTreatments
+    revokeTreatmentLog = server.revokeTreatmentLog
+    updateTreatmentLog = server.updateTreatmentLog
+    KolamError = server.KolamError
+
     const cycle = await prisma.batchPond.findFirst({
       where: { batch: { name: 'BATCH 1' }, pond: { code: 'A3' } },
       select: { id: true },

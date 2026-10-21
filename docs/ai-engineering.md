@@ -117,7 +117,7 @@ Run the narrowest command that can fail the change. Do not claim a pass without 
 
 Do not weaken a story, a schema, or `authMiddleware` to make a check pass. If a command fails or is skipped, say so in the summary.
 
-There is no unit-test script besides Storybook, and no CI workflow. Those are gaps, not optional extras an agent may ignore when a story is the right check.
+`pnpm test:unit` covers domain tests. Story tests stay a local Playwright check. There is no CI workflow. Do not add one until more of the fish-farm roadmap is in place. A story is still the right check when a component changed.
 
 ## Integrations
 

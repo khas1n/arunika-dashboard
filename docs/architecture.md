@@ -23,7 +23,7 @@ Verified from `package.json` and the running layout. Versions below are the rang
 | Nitro                                | Production Node server. The dependency is a beta pin |
 | pnpm 11.4.0 and Node 24              | Toolchain                                            |
 
-There is no committed CI workflow.
+There is no committed CI workflow. Checks are local.
 
 ## Request path
 
@@ -101,10 +101,11 @@ The session is not stored in Zustand.
 ## Limitations
 
 - One deployment, one database, one set of screens.
-- Several pakan models have no operator screen. The import script and the feed-usage check are what touch them.
+- Receipts, feed applications, and stock opname have no operator screen. The import script and the feed-usage check are what touch them. Treatment logs have a screen.
 - Daily history is replaced when `pnpm db:import` runs again. That command is a developer script, not an upload button.
-- Story tests are the automated UI check. There is no separate unit-test script and no CI config in the repo.
+- `pnpm test:unit` runs domain tests in Node. The treatment server test loads the database only when `DATABASE_URL` is set, and skips otherwise. Story tests need Playwright and stay a local check. There is no GitHub Actions workflow.
 - Nitro is pinned to a beta release.
+- There is no `LICENSE` file. Reuse is not permitted until one is added.
 
 ## Later industries
 
