@@ -1,9 +1,13 @@
 import { useQueryClient } from '@tanstack/react-query'
-import type { QueryKey } from '@tanstack/react-query'
+import type { InfiniteData, QueryKey } from '@tanstack/react-query'
 import { useOptimisticMutation } from '#/hooks/use-optimistic-mutation'
+import { sessionQueryKey } from '#/features/auth/api/session.queries'
 import {
   createFastingOverrideFn,
+  createTreatmentLogFn,
   revokeFastingOverrideFn,
+  revokeTreatmentLogFn,
+  updateTreatmentLogFn,
   upsertPondDayFn,
 } from '#/features/pakan/api/kolam.functions'
 import { kolamQueryKey } from '#/features/pakan/api/kolam.queries'
@@ -12,6 +16,7 @@ import {
   cultureDay,
   todayInJakarta,
 } from '#/features/pakan/domain/feeding-schedule'
+import { zonedDateTime } from '#/features/pakan/domain/zoned-datetime'
 import type {
   FastingOverrideInput,
   FastingOverrideItem,
@@ -19,6 +24,10 @@ import type {
   PondDay,
   PondDayPatch,
   PondDaySave,
+  TreatmentLogInput,
+  TreatmentLogItem,
+  TreatmentLogUpdate,
+  TreatmentOption,
 } from '#/features/pakan/schemas/kolam'
 
 interface Page<TRow> {
@@ -42,6 +51,20 @@ function isPage<TRow>(value: unknown): value is Page<TRow> {
     Array.isArray(value.rows) &&
     'rowCount' in value &&
     typeof value.rowCount === 'number'
+  )
+}
+
+function isInfinitePage<TRow>(
+  value: unknown,
+): value is InfiniteData<Page<TRow>, number> {
+  return (
+    value != null &&
+    typeof value === 'object' &&
+    'pages' in value &&
+    Array.isArray(value.pages) &&
+    value.pages.every((page) => isPage<TRow>(page)) &&
+    'pageParams' in value &&
+    Array.isArray(value.pageParams)
   )
 }
 
@@ -391,10 +414,268 @@ export function useKolamActions(pondCode: string) {
     },
   })
 
+  const refreshTreatments = () =>
+    queryClient.invalidateQueries({
+      queryKey: [...kolamQueryKey, 'treatments'],
+    })
+
+  function treatmentOption(treatmentId: string) {
+    const options = queryClient.getQueryData<Array<TreatmentOption>>([
+      ...kolamQueryKey,
+      'treatment-options',
+    ])
+    return (
+      options?.find((row) => row.id === treatmentId) ?? {
+        id: treatmentId,
+        code: '',
+        name: 'Treatment',
+      }
+    )
+  }
+
+  function sessionUserName() {
+    const session = queryClient.getQueryData<{
+      user: { name: string }
+    } | null>(sessionQueryKey)
+    return session?.user.name ?? '…'
+  }
+
+  function sortTreatmentRows(rows: Array<TreatmentLogItem>) {
+    return [...rows].sort((left, right) => {
+      const byTime = right.occurredAt.localeCompare(left.occurredAt)
+      if (byTime !== 0) return byTime
+      return right.id.localeCompare(left.id)
+    })
+  }
+
+  const createTreatment = useOptimisticMutation({
+    mutationFn: (values: TreatmentLogInput & { clientId: string }) =>
+      createTreatmentLogFn({
+        data: {
+          batchPondId: values.batchPondId,
+          treatmentId: values.treatmentId,
+          quantityGrams: values.quantityGrams,
+          date: values.date,
+          time: values.time,
+          timeZone: values.timeZone,
+        },
+      }),
+    scope: (values) => values.clientId,
+    queryKey: [...kolamQueryKey, 'treatments'],
+    errorMessage: 'Treatment gagal disimpan.',
+    successMessage: 'Treatment tersimpan.',
+    invalidate: refreshTreatments,
+    apply: (values) => {
+      const tempId = `temp-${values.clientId}`
+      let occurredAt: string
+      try {
+        occurredAt = zonedDateTime(
+          values.date,
+          values.time,
+          values.timeZone,
+        ).toISOString()
+      } catch {
+        occurredAt = new Date().toISOString()
+      }
+      const option = treatmentOption(values.treatmentId)
+      const temp: TreatmentLogItem = {
+        id: tempId,
+        treatmentId: values.treatmentId,
+        treatmentCode: option.code,
+        treatmentName: option.name,
+        quantityGrams: values.quantityGrams,
+        occurredAt,
+        userName: sessionUserName(),
+      }
+      const touched: Array<QueryKey> = []
+      for (const [key, data] of queryClient.getQueriesData({
+        queryKey: [...kolamQueryKey, 'treatments'],
+      })) {
+        if (pondCodeFrom(key) !== pondCode) continue
+        if (isInfinitePage<TreatmentLogItem>(data)) {
+          touched.push(key)
+          const pageSize = data.pages.at(0)?.rows.length || 20
+          queryClient.setQueryData(key, {
+            ...data,
+            pages: data.pages.map((page, index) => ({
+              rowCount: page.rowCount + 1,
+              rows:
+                index === 0
+                  ? sortTreatmentRows([temp, ...page.rows]).slice(0, pageSize)
+                  : page.rows,
+            })),
+          })
+          continue
+        }
+        if (!isPage<TreatmentLogItem>(data)) continue
+        const pageIndex = queryNumber(key, 'pageIndex', 0)
+        const pageSize = queryNumber(key, 'pageSize', data.rows.length || 25)
+        touched.push(key)
+        queryClient.setQueryData(key, {
+          rowCount: data.rowCount + 1,
+          rows:
+            pageIndex === 0
+              ? sortTreatmentRows([temp, ...data.rows]).slice(0, pageSize)
+              : data.rows,
+        })
+      }
+      return (latest) => {
+        if (!latest) return
+        for (const key of touched) {
+          const data = queryClient.getQueryData(key)
+          if (isInfinitePage<TreatmentLogItem>(data)) {
+            queryClient.setQueryData(key, {
+              ...data,
+              pages: data.pages.map((page) => {
+                const rows = page.rows.filter((row) => row.id !== tempId)
+                return {
+                  rows,
+                  rowCount:
+                    rows.length === page.rows.length
+                      ? page.rowCount
+                      : Math.max(0, page.rowCount - 1),
+                }
+              }),
+            })
+            continue
+          }
+          if (!isPage<TreatmentLogItem>(data)) continue
+          const rows = data.rows.filter((row) => row.id !== tempId)
+          queryClient.setQueryData(key, {
+            rows,
+            rowCount:
+              rows.length === data.rows.length
+                ? data.rowCount
+                : Math.max(0, data.rowCount - 1),
+          })
+        }
+      }
+    },
+  })
+
+  const updateTreatment = useOptimisticMutation({
+    mutationFn: (values: TreatmentLogUpdate) =>
+      updateTreatmentLogFn({ data: values }),
+    scope: (values) => values.id,
+    queryKey: [...kolamQueryKey, 'treatments'],
+    errorMessage: 'Treatment gagal diubah.',
+    successMessage: 'Treatment diubah.',
+    invalidate: refreshTreatments,
+    apply: (values) => {
+      let occurredAt: string
+      try {
+        occurredAt = zonedDateTime(
+          values.date,
+          values.time,
+          values.timeZone,
+        ).toISOString()
+      } catch {
+        occurredAt = new Date().toISOString()
+      }
+      const option = treatmentOption(values.treatmentId)
+      const patch = (row: TreatmentLogItem): TreatmentLogItem =>
+        row.id === values.id
+          ? {
+              ...row,
+              treatmentId: values.treatmentId,
+              treatmentCode: option.code,
+              treatmentName: option.name,
+              quantityGrams: values.quantityGrams,
+              occurredAt,
+            }
+          : row
+      const snapshots: Array<{ queryKey: QueryKey; data: unknown }> = []
+      for (const [key, data] of queryClient.getQueriesData({
+        queryKey: [...kolamQueryKey, 'treatments'],
+      })) {
+        if (pondCodeFrom(key) !== pondCode) continue
+        if (isInfinitePage<TreatmentLogItem>(data)) {
+          if (!data.pages.some((page) => page.rows.some((row) => row.id === values.id))) {
+            continue
+          }
+          snapshots.push({ queryKey: key, data })
+          queryClient.setQueryData(key, {
+            ...data,
+            pages: data.pages.map((page) => ({
+              ...page,
+              rows: sortTreatmentRows(page.rows.map(patch)),
+            })),
+          })
+          continue
+        }
+        if (!isPage<TreatmentLogItem>(data)) continue
+        if (!data.rows.some((row) => row.id === values.id)) continue
+        snapshots.push({ queryKey: key, data })
+        const pageSize = queryNumber(key, 'pageSize', data.rows.length || 25)
+        queryClient.setQueryData(key, {
+          ...data,
+          rows: sortTreatmentRows(data.rows.map(patch)).slice(0, pageSize),
+        })
+      }
+      return (latest) => {
+        if (!latest) return
+        for (const snapshot of snapshots) {
+          queryClient.setQueryData(snapshot.queryKey, snapshot.data)
+        }
+      }
+    },
+  })
+
+  const revokeTreatment = useOptimisticMutation({
+    mutationFn: (id: string) => revokeTreatmentLogFn({ data: { id } }),
+    scope: (id) => id,
+    queryKey: [...kolamQueryKey, 'treatments'],
+    errorMessage: 'Treatment gagal dihapus.',
+    successMessage: 'Treatment dihapus.',
+    invalidate: refreshTreatments,
+    apply: (id) => {
+      const snapshots: Array<{ queryKey: QueryKey; data: unknown }> = []
+      for (const [key, data] of queryClient.getQueriesData({
+        queryKey: [...kolamQueryKey, 'treatments'],
+      })) {
+        if (pondCodeFrom(key) !== pondCode) continue
+        if (isInfinitePage<TreatmentLogItem>(data)) {
+          if (!data.pages.some((page) => page.rows.some((row) => row.id === id))) {
+            continue
+          }
+          snapshots.push({ queryKey: key, data })
+          queryClient.setQueryData(key, {
+            ...data,
+            pages: data.pages.map((page) => ({
+              rows: page.rows.filter((row) => row.id !== id),
+              rowCount: Math.max(0, page.rowCount - 1),
+            })),
+          })
+          continue
+        }
+        if (!isPage<TreatmentLogItem>(data)) continue
+        if (!data.rows.some((row) => row.id === id)) continue
+        snapshots.push({ queryKey: key, data })
+        queryClient.setQueryData(key, {
+          rows: data.rows.filter((row) => row.id !== id),
+          rowCount: Math.max(0, data.rowCount - 1),
+        })
+      }
+      return (latest) => {
+        if (!latest) return
+        for (const snapshot of snapshots) {
+          queryClient.setQueryData(snapshot.queryKey, snapshot.data)
+        }
+      }
+    },
+  })
+
   return {
     createOverride: (values: FastingOverrideInput) =>
       create.mutateAsync({ ...values, clientId: crypto.randomUUID() }),
     revokeOverride: revoke.mutateAsync,
     upsertDay: upsert.mutateAsync,
+    createTreatmentLog: (values: TreatmentLogInput) =>
+      createTreatment.mutateAsync({
+        ...values,
+        clientId: crypto.randomUUID(),
+      }),
+    updateTreatmentLog: updateTreatment.mutateAsync,
+    revokeTreatmentLog: revokeTreatment.mutateAsync,
   }
 }

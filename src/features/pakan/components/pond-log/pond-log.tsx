@@ -11,6 +11,7 @@ import {
   ChevronDown,
   Info,
   Plus,
+  Syringe,
   UtensilsCrossed,
 } from 'lucide-react'
 import { AppDialog } from '#/components/shared/app-dialog'
@@ -53,6 +54,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { FastingOverrideForm } from '#/features/pakan/components/fasting-override-form'
 import { PondDayForm } from '#/features/pakan/components/pond-day-form'
 import {
+  TreatmentLogForm,
+  TreatmentLogPanel,
+} from '#/features/pakan/components/pond-log/treatment-log'
+import {
   BiomassChart,
   MortalityChart,
 } from '#/features/pakan/components/pond-log/biomass-chart'
@@ -83,6 +88,11 @@ import type {
   PondDayFormValues,
   PondDayLookup,
   PondDaySave,
+  PondTab,
+  TreatmentLogInput,
+  TreatmentLogItem,
+  TreatmentLogUpdate,
+  TreatmentOption,
 } from '#/features/pakan/schemas/kolam'
 import { todayInJakarta } from '#/features/pakan/domain/feeding-schedule'
 import {
@@ -106,11 +116,26 @@ interface PondLogProps {
   overrideRowCount?: number
   overrideTable?: ServerTableControls
   overridesFetching?: boolean
+  treatments?: Array<TreatmentLogItem>
+  treatmentsPending?: boolean
+  treatmentsFetching?: boolean
+  treatmentsFetchingNextPage?: boolean
+  treatmentsHasNextPage?: boolean
+  onFetchMoreTreatments?: () => void
+  treatmentRange?: DateRange | null
+  onTreatmentRangeChange?: (range: DateRange | null) => void
+  plannedTreatments?: Array<TreatmentOption>
+  treatmentOptions?: Array<TreatmentOption>
   onCreateOverride: (values: FastingOverrideInput) => Promise<unknown>
   onRevokeOverride: (id: string) => Promise<unknown>
   onUpsertDay: (values: PondDaySave) => Promise<unknown>
   onDayExists?: (input: PondDayLookup) => Promise<boolean>
   onLoadDay?: (input: PondDayLookup) => Promise<PondDayDraft | null>
+  onCreateTreatment?: (values: TreatmentLogInput) => Promise<unknown>
+  onUpdateTreatment?: (values: TreatmentLogUpdate) => Promise<unknown>
+  onRevokeTreatment?: (id: string) => Promise<unknown>
+  tab?: PondTab
+  onTabChange?: (tab: PondTab) => void
 }
 
 export const PondLog: FC<PondLogProps> = ({
@@ -127,13 +152,41 @@ export const PondLog: FC<PondLogProps> = ({
   overrideRowCount,
   overrideTable,
   overridesFetching = false,
+  treatments = [],
+  treatmentsPending = false,
+  treatmentsFetching = false,
+  treatmentsFetchingNextPage = false,
+  treatmentsHasNextPage = false,
+  onFetchMoreTreatments,
+  treatmentRange = null,
+  onTreatmentRangeChange,
+  plannedTreatments = [],
+  treatmentOptions = [],
   onCreateOverride,
   onRevokeOverride,
   onUpsertDay,
   onDayExists,
   onLoadDay,
+  onCreateTreatment,
+  onUpdateTreatment,
+  onRevokeTreatment,
+  tab: tabProp,
+  onTabChange,
 }) => {
-  const [tab, setTab] = useState('harian')
+  const [uncontrolledTab, setUncontrolledTab] = useState<PondTab>('harian')
+  const tab = tabProp ?? uncontrolledTab
+  const setTab = (next: string) => {
+    if (
+      next !== 'harian' &&
+      next !== 'puasa' &&
+      next !== 'treatment' &&
+      next !== 'grafik'
+    ) {
+      return
+    }
+    if (onTabChange) onTabChange(next)
+    else setUncontrolledTab(next)
+  }
   const [recording, setRecording] = useState(false)
   const [report, setReport] = useState<ReportKind | null>(null)
   const [replacing, setReplacing] = useState<PondDayFormValues | null>(null)
@@ -142,6 +195,11 @@ export const PondLog: FC<PondLogProps> = ({
   const [endingIds, setEndingIds] = useState<Array<string>>([])
   const [pendingEnd, setPendingEnd] = useState(false)
   const [endError, setEndError] = useState<string>()
+  const [recordingTreatment, setRecordingTreatment] = useState(false)
+  const [editingTreatment, setEditingTreatment] = useState<TreatmentLogItem>()
+  const [revokingTreatment, setRevokingTreatment] = useState<TreatmentLogItem>()
+  const [pendingRevokeTreatment, setPendingRevokeTreatment] = useState(false)
+  const [revokeTreatmentError, setRevokeTreatmentError] = useState<string>()
   const table = useAppTable({
     data: dayTable ? days : [...days].sort(byDateDesc),
     columns: pondDayColumns,
@@ -186,6 +244,10 @@ export const PondLog: FC<PondLogProps> = ({
               <TabsTrigger value="puasa">
                 <UtensilsCrossed />
                 Puasa
+              </TabsTrigger>
+              <TabsTrigger value="treatment">
+                <Syringe />
+                Treatment
               </TabsTrigger>
               <TabsTrigger value="grafik">
                 <ChartLine />
@@ -318,6 +380,31 @@ export const PondLog: FC<PondLogProps> = ({
                 </OverrideEndProvider>
               </CardContent>
             </Card>
+          </TabsContent>
+          <TabsContent value="treatment" className="grid min-w-0 gap-4">
+            <TreatmentLogPanel
+              plannedTreatments={plannedTreatments}
+              rows={treatments}
+              isPending={treatmentsPending}
+              isFetching={treatmentsFetching}
+              isFetchingNextPage={treatmentsFetchingNextPage}
+              hasNextPage={treatmentsHasNextPage}
+              onFetchNextPage={() => onFetchMoreTreatments?.()}
+              range={treatmentRange}
+              onRangeChange={(next) => onTreatmentRangeChange?.(next)}
+              onCreate={() => {
+                setEditingTreatment(undefined)
+                setRecordingTreatment(true)
+              }}
+              onEdit={(row) => {
+                setRecordingTreatment(false)
+                setEditingTreatment(row)
+              }}
+              onRevoke={(row) => {
+                setRevokeTreatmentError(undefined)
+                setRevokingTreatment(row)
+              }}
+            />
           </TabsContent>
           {tab === 'grafik' ? (
             <TabsContent value="grafik" className="grid min-w-0 gap-4">
@@ -512,6 +599,78 @@ export const PondLog: FC<PondLogProps> = ({
               setEndError(message)
             }
           })().finally(() => setPendingEnd(false))
+        }}
+      />
+
+      <AppDialog
+        open={recordingTreatment || editingTreatment != null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRecordingTreatment(false)
+            setEditingTreatment(undefined)
+          }
+        }}
+        title={editingTreatment ? 'Ubah treatment' : 'Catat treatment'}
+      >
+        {cycle ? (
+          <TreatmentLogForm
+            key={editingTreatment?.id ?? 'create'}
+            batchPondId={cycle.id}
+            options={treatmentOptions}
+            initial={editingTreatment}
+            onCancel={() => {
+              setRecordingTreatment(false)
+              setEditingTreatment(undefined)
+            }}
+            onSubmit={async (values) => {
+              if (editingTreatment) {
+                if (!onUpdateTreatment) return
+                await onUpdateTreatment({
+                  id: editingTreatment.id,
+                  treatmentId: values.treatmentId,
+                  quantityGrams: values.quantityGrams,
+                  date: values.date,
+                  time: values.time,
+                  timeZone: values.timeZone,
+                })
+                setEditingTreatment(undefined)
+                return
+              }
+              if (!onCreateTreatment) return
+              await onCreateTreatment(values)
+              setRecordingTreatment(false)
+            }}
+          />
+        ) : null}
+      </AppDialog>
+
+      <ConfirmDialog
+        open={revokingTreatment != null}
+        onOpenChange={(open) => {
+          if (!open && !pendingRevokeTreatment) {
+            setRevokingTreatment(undefined)
+            setRevokeTreatmentError(undefined)
+          }
+        }}
+        title="Hapus treatment?"
+        description="Dihapus dari daftar."
+        confirmLabel="Hapus"
+        pending={pendingRevokeTreatment}
+        error={revokeTreatmentError}
+        onConfirm={() => {
+          if (!revokingTreatment || !onRevokeTreatment) return
+          setPendingRevokeTreatment(true)
+          setRevokeTreatmentError(undefined)
+          void onRevokeTreatment(revokingTreatment.id)
+            .then(() => setRevokingTreatment(undefined))
+            .catch((error: unknown) => {
+              setRevokeTreatmentError(
+                error instanceof Error
+                  ? error.message
+                  : 'Terjadi kesalahan. Coba lagi.',
+              )
+            })
+            .finally(() => setPendingRevokeTreatment(false))
         }}
       />
     </section>

@@ -8,7 +8,7 @@ The schema and domain rules below are still the model. The app now also has the 
 
 - **Ponds are rows.** There is no table per pond, per sheet, or per treatment.
 - **Reference, cycle, snapshot, event.** Reference data says what exists. A cycle ties a pond to a batch. A daily record is a snapshot of observations. Events are things that happened, possibly many times a day.
-- **Events are the audit trail.** Every event table is append-only: written once, never updated or deleted. A correction is a new row. There is no separate `ActivityLog`, because it would store each event a second time. A later history screen reads the event tables and merges them by time.
+- **Events are the audit trail.** Most event tables are append-only: written once, never updated or deleted. A correction is a new row. Exceptions: `FastingOverride` and `TreatmentLog` may be soft-revoked (`revokedAt`), and an active `TreatmentLog` may be updated in place for operator correction ([adr/0002-treatment-log-soft-revoke.md](adr/0002-treatment-log-soft-revoke.md)). There is no separate `ActivityLog`, because it would store each event a second time. A later history screen reads the event tables and merges them by time.
 - **Derived values are not stored.** Population, biomass, calculated feed, operational feed, actual feed totals, stock balance, bibis for a day, and FCR are computed from stored inputs.
 - **Grams are the canonical unit** for every mass. See [Units](#units).
 - **Blank is not zero.** Optional inputs are nullable.
@@ -207,7 +207,7 @@ Old receipts and applications are never edited to make a count match.
 
 ## Treatments
 
-`Treatment` is the master. `TreatmentLog` is the event: `treatmentId`, `batchPondId`, `quantityGrams`, `occurredAt`, `userId`, optional `note`. The batch comes from the cycle. There are no `molaseAmount` or `gosStrongAmount` columns.
+`Treatment` is the master. `TreatmentLog` is the event: `treatmentId`, `batchPondId`, `quantityGrams`, `occurredAt` (UTC), `userId`, optional `note`, optional `revokedAt` / `revokedById`. The batch comes from the cycle. There are no `molaseAmount` or `gosStrongAmount` columns. The Kolam Treatment tab creates, edits, and soft-revokes these rows. Wall clock on the wire is date + time + browser IANA timezone.
 
 Only the `MOLASE` treatment feeds the molase-carbon formula: grams times `Batch.molassesCarbonFraction`. CN ratio is `(feed carbon + molase carbon) / feed nitrogen`.
 

@@ -14,6 +14,11 @@ import {
   FieldLabel,
 } from '#/components/ui/field'
 import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+} from '#/components/ui/input-group'
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -300,7 +305,12 @@ export const DateField: FC<DateFieldProps> = ({
     >
       {label ? <FieldLabel htmlFor={field.name}>{label}</FieldLabel> : null}
       <FieldContent>
-        <div className="flex gap-2">
+        <InputGroup
+          className={cn(disabled && 'pointer-events-none opacity-50')}
+        >
+          <InputGroupAddon align="inline-start">
+            <CalendarIcon />
+          </InputGroupAddon>
           <Popover
             open={open}
             onOpenChange={(next) => {
@@ -315,13 +325,17 @@ export const DateField: FC<DateFieldProps> = ({
               <Button
                 id={field.name}
                 type="button"
-                variant="outline"
+                variant="ghost"
                 disabled={disabled}
+                data-slot="input-group-control"
                 data-empty={empty || undefined}
                 aria-invalid={invalid || undefined}
-                className="min-w-0 flex-1 justify-start data-[empty=true]:text-muted-foreground"
+                className={cn(
+                  'h-full min-w-0 flex-1 justify-start rounded-none border-0 bg-transparent px-2 shadow-none',
+                  'hover:bg-transparent focus-visible:ring-0',
+                  'data-[empty=true]:text-muted-foreground',
+                )}
               >
-                <CalendarIcon data-icon="inline-start" />
                 <span className="truncate">
                   {text ?? placeholder ?? placeholders[mode]}
                 </span>
@@ -339,17 +353,19 @@ export const DateField: FC<DateFieldProps> = ({
               ) : null}
             </PopoverContent>
           </Popover>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            aria-label="Hapus tanggal"
-            disabled={disabled || empty}
-            onClick={clear}
-          >
-            <XIcon />
-          </Button>
-        </div>
+          {!empty ? (
+            <InputGroupAddon align="inline-end">
+              <InputGroupButton
+                size="icon-xs"
+                aria-label="Hapus tanggal"
+                disabled={disabled}
+                onClick={clear}
+              >
+                <XIcon />
+              </InputGroupButton>
+            </InputGroupAddon>
+          ) : null}
+        </InputGroup>
         {description ? (
           <FieldDescription>{description}</FieldDescription>
         ) : null}

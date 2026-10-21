@@ -18,7 +18,7 @@ There is one kind of account. Anyone who can sign in can do the same work. Scree
 
 - Sign in with a username and password. Email is stored on the account and is not the login field. Public sign-up is disabled. The first administrator is created by the database seed.
 - Beranda shows user and active-session counts, and the jenis pakan list. A feed that is already used cannot be deleted.
-- Kolam opens each pond in batch order. Cycle facts sit in an info control. Today's bibis, total kematian, and FCR stay above the tabs. Harian is the paged daily log. Puasa records and ends puasa dadakan. Grafik shows biomass and daily deaths for this pond, for the whole cycle until a range is applied.
+- Kolam opens each pond in batch order. Cycle facts sit in an info control. Today's bibis, total kematian, and FCR stay above the tabs. Harian is the paged daily log. Puasa records and ends puasa dadakan. Treatment is the treatment timeline for the cycle. Grafik shows biomass and daily deaths for this pond, for the whole cycle until a range is applied.
 - Profil shows the session. Pengaturan stores theme and sidebar in the browser.
 - BATCH 1 history is loaded with `pnpm db:import` from the Pakan workbook. That script is not an upload screen.
 

@@ -112,14 +112,88 @@ const meta = {
       { date: '2026-10-03', biomassGrams: 30000, deaths: 8 },
       { date: '2026-10-08', biomassGrams: 32000, deaths: 0 },
     ],
+    treatments: [
+      {
+        id: 'log-1',
+        treatmentId: 'aqua',
+        treatmentCode: 'AQUA_CELL',
+        treatmentName: 'Aqua Cell',
+        quantityGrams: 200,
+        occurredAt: '2026-10-20T08:55:00.000Z',
+        userName: 'Administrator',
+      },
+      {
+        id: 'log-2',
+        treatmentId: 'basilus',
+        treatmentCode: 'BASILUS',
+        treatmentName: 'Basilus',
+        quantityGrams: 1000,
+        occurredAt: '2026-10-20T08:54:00.000Z',
+        userName: 'Administrator',
+      },
+      {
+        id: 'log-3',
+        treatmentId: 'molase',
+        treatmentCode: 'MOLASE',
+        treatmentName: 'Molase',
+        quantityGrams: 2000,
+        occurredAt: '2026-09-29T17:00:00.000Z',
+        userName: 'Administrator',
+      },
+    ],
+    plannedTreatments: [
+      { id: 'molase', code: 'MOLASE', name: 'Molase' },
+      { id: 'basilus', code: 'BASILUS', name: 'Basilus' },
+    ],
+    treatmentOptions: [
+      { id: 'molase', code: 'MOLASE', name: 'Molase' },
+      { id: 'gos', code: 'GOS_STRONG', name: 'Gos Strong' },
+      { id: 'aqua', code: 'AQUA_CELL', name: 'Aqua Cell' },
+      { id: 'basilus', code: 'BASILUS', name: 'Basilus' },
+    ],
     onCreateOverride: fn(async () => {}),
     onRevokeOverride: fn(async () => {}),
     onUpsertDay: fn(async () => {}),
+    onCreateTreatment: fn(async () => {}),
+    onUpdateTreatment: fn(async () => {}),
+    onRevokeTreatment: fn(async () => {}),
   },
 } satisfies Meta<typeof PondLog>
 
 export default meta
 type Story = StoryObj<typeof meta>
+
+export const TreatmentTab: Story = {
+  args: {
+    treatmentRange: null,
+    onTreatmentRangeChange: fn(),
+    onFetchMoreTreatments: fn(),
+    tab: 'treatment',
+  },
+  play: async ({ canvas }) => {
+    await expect(
+      canvas.getByRole('heading', { name: 'Treatment' }),
+    ).toBeVisible()
+    await expect(canvas.getByText('Basilus')).toBeVisible()
+    await expect(canvas.getByText('Molase')).toBeVisible()
+    await expect(canvas.getByText('Aqua Cell')).toBeVisible()
+    await expect(canvas.getAllByText('menambahkan').length).toBeGreaterThan(0)
+    await expect(canvas.getByRole('button', { name: 'Catat' })).toBeVisible()
+  },
+}
+
+export const TreatmentForm: Story = {
+  args: { tab: 'treatment' },
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.click(canvas.getByRole('button', { name: 'Catat' }))
+    await expect(
+      await screen.findByRole('heading', { name: 'Catat treatment' }),
+    ).toBeVisible()
+    await expect(
+      screen.getByRole('combobox', { name: 'Treatment' }),
+    ).toBeVisible()
+  },
+}
 
 export const TwoPonds: Story = {
   play: async ({ canvas, userEvent }) => {
@@ -409,5 +483,8 @@ export const Empty: Story = {
     days: [],
     bibis: [],
     overrides: [],
+    treatments: [],
+    plannedTreatments: [],
+    treatmentOptions: [],
   },
 }

@@ -19,15 +19,16 @@ model User {
   sessions      Session[]
   accounts      Account[]
 
-  feedReceipts       FeedReceipt[]
-  feedApplications   FeedApplication[]
-  stockOpnames       StockOpname[]
-  treatmentLogs      TreatmentLog[]
-  mortalityEvents    MortalityEvent[]
-  pondStockings      PondStocking[]
-  fastingOverrides   FastingOverride[] @relation("FastingOverrideCreatedBy")
-  fastingRevocations FastingOverride[] @relation("FastingOverrideRevokedBy")
-  bibisRecords       BibisRecord[]
+  feedReceipts            FeedReceipt[]
+  feedApplications        FeedApplication[]
+  stockOpnames            StockOpname[]
+  treatmentLogs           TreatmentLog[] @relation("TreatmentLogCreatedBy")
+  treatmentLogRevocations TreatmentLog[] @relation("TreatmentLogRevokedBy")
+  mortalityEvents         MortalityEvent[]
+  pondStockings           PondStocking[]
+  fastingOverrides        FastingOverride[] @relation("FastingOverrideCreatedBy")
+  fastingRevocations      FastingOverride[] @relation("FastingOverrideRevokedBy")
+  bibisRecords            BibisRecord[]
 
   @@map("user")
 }
@@ -442,21 +443,25 @@ model StockOpname {
 }
 
 model TreatmentLog {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   batchPondId   String
   treatmentId   String
   quantityGrams Int
   occurredAt    DateTime
   userId        String
   note          String?
-  createdAt     DateTime @default(now())
+  createdAt     DateTime  @default(now())
+  revokedAt     DateTime?
+  revokedById   String?
 
   batchPond BatchPond @relation(fields: [batchPondId], references: [id])
   treatment Treatment @relation(fields: [treatmentId], references: [id])
-  user      User      @relation(fields: [userId], references: [id])
+  user      User      @relation("TreatmentLogCreatedBy", fields: [userId], references: [id])
+  revokedBy User?     @relation("TreatmentLogRevokedBy", fields: [revokedById], references: [id])
 
   @@index([batchPondId, occurredAt])
   @@index([treatmentId, occurredAt])
   @@index([userId])
+  @@index([revokedById])
   @@map("treatment_log")
 }
