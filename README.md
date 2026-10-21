@@ -6,9 +6,9 @@ The app is actively developed. A license has not been chosen, so this repository
 
 ## What you are looking at
 
-![Treatment timeline for pond A3, using sample rows from the Pond Log story](docs/screenshots/pond-log-treatment.png)
+![Daily log for pond A3, using sample rows from the Pond Log story](docs/screenshots/pond-log-harian.png)
 
-Treatment timeline on a pond page. The rows are Storybook fixtures, not an export of the live farm. More views are in the [screenshot gallery](docs/screenshots/README.md). A click-by-click walkthrough is in [docs/demo.md](docs/demo.md).
+Daily log on a pond page: weight, deaths, and feed for each day. The rows are Storybook fixtures, not an export of the live farm. More views are in the [screenshot gallery](docs/screenshots/README.md). A click-by-click walkthrough is in [docs/demo.md](docs/demo.md).
 
 ## Problem
 
