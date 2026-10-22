@@ -2,25 +2,43 @@
 
 What Arunika is for, what the app does today, and what is still a proposal. Status words match [roadmap.md](roadmap.md).
 
-## Problem
+<!-- impeccable:product-schema 1 -->
+
+## Platform
+
+web
+
+## Users
+
+Someone on our eight-pond tilapia farm. Two jobs have equal weight: record that pond's day (weight, deaths, feed, fasting, treatment), and review the cycle (history, biomass, deaths, FCR).
+
+There is one account type. A person who can sign in can do the same work as every other person who can sign in. Browser sign-up is off. Accounts come from the seed or `pnpm user:create`.
+
+"Any fish farm runs its own copy" is a later direction, not the audience today. A second industry is not chosen. A shared database for many farms is not the plan.
+
+## Product Purpose
 
 A fish farm's daily record is easy to lose when it lives in a workbook. Growth, feed, fasting, and stock then disagree with each other, and a later question ("what was biomass on this pond, and what did we actually feed?") takes a manual reconstruction.
 
-Arunika is that app. It is being built for our own eight-pond tilapia farm. Biofloc is a cultivation method we are trying on that farm. The software has not shown that the method, or the app, improves harvest quality. A farm is meant to run its own copy. Opening the source is the plan, and a license has not been chosen, so reuse is not permitted yet. Broader adoption is not established. There are no customers, revenue, or usage numbers.
+Arunika replaces that workbook as this farm's pond record. Success is that the day's inputs and the derived history agree. The software has not shown that biofloc, or the app, improves harvest quality. Broader adoption is not established.
 
-## Who it is for
+The longer direction is one system for operations, production, inventory, and commercial records. Fish farming is the first industry. Poultry, vegetables, and other livestock are a later direction, not a current data model. Shared ideas that already exist here are inventory-like events (feed received, feed applied, stock counted), a production cycle (`Batch` and `BatchPond`), and a daily snapshot (`PondDailyRecord`). Those names are fish-farm names. Reusing them for chickens or crops would be a new design, not a rename.
 
-Any fish farm that runs the app. There is one account type: a person who can sign in can do the same work as every other person who can sign in. Browser sign-up is still off. Accounts come from the seed or `pnpm user:create`.
+## Positioning
 
-A second industry is not chosen. A shared database for many farms is not the plan. Each farm runs a copy.
+One deployment is this farm's book of record: events in, derived figures out, one account type. A multi-farm product could not truthfully say that.
 
-## Vision
+## Operating Context
 
-Help a farming business keep operations, production, inventory, and commercial records in one system.
+Eight ponds, opened in batch order: A3, B3, C3, D3, A6, B6, C6, D6. The fish are tilapia (nila). Biofloc is a cultivation method we are trying on this farm. It is not a proven result.
 
-The first industry is fish farming. Poultry, vegetables, and other livestock are a later direction, not a current data model. Shared ideas that already exist here are inventory-like events (feed received, feed applied, stock counted), a production cycle (`Batch` and `BatchPond`), and a daily snapshot (`PondDailyRecord`). Those names are fish-farm names. Reusing them for chickens or crops would be a new design, not a rename.
+The app runs in the browser. Screen copy is Indonesian. `pnpm db:seed` creates Nila, Biofloc, and one administrator. It does not create pond history. History arrives only through `pnpm db:import` of the BATCH 1 workbook. Re-running that command replaces those cycles. It does not write puasa dadakan. Ponds, feed names, fish species, cultivation methods, and the administrator account stay. BATCH 1 cycles are Nila grown with Biofloc.
 
-## Initial market: fish farming
+## Capabilities and Constraints
+
+A license has not been chosen, so reuse is not permitted yet. There are no customers, revenue, or usage numbers.
+
+### Initial market: fish farming
 
 Candidate workflows. Only the status column is a claim about this repository.
 
@@ -40,7 +58,7 @@ Candidate workflows. Only the status column is a claim about this repository.
 | Alerts and reminders               | A nudge when a record or stock is late                       | Not modeled                                                                                                                                                                                                                                                                    |
 | Multi-farm                         | More than one business in one deployment                     | Not modeled                                                                                                                                                                                                                                                                    |
 
-## What an operator can do today
+### What an operator can do today
 
 Screen copy is Indonesian today. Translations are planned.
 
@@ -49,9 +67,7 @@ Screen copy is Indonesian today. Translations are planned.
 - Kolam: open a pond in batch order (A3, B3, C3, D3, A6, B6, C6, D6). Cycle facts, including jenis ikan and metode budidaya, sit in an info control beside the title. Today's bibis, total kematian for the active cycle, and FCR stay above the tabs. The active tab is kept in the URL (`?tab=`), so a reload opens the same tab. Harian is the paged daily log, newest date first. Catat records today's weight, today's deaths, or today's actual feed, each on its own, and can also add a historical day. Choosing a historical date loads that day's weight, deaths, and actual feed, and those fields stay closed until a date is chosen. An existing historical date is replaced only after confirmation. Each missing report for today is its own toast, and that toast hides when the report is recorded, including a recorded zero. DOC on screen is the calendar day from that cycle's earliest stocking date. FR is looked up from the weight and is not typed. Berat, kematian, and pakan aktual can be edited in the cells. Puasa shows puasa dadakan, including ended rows, and can record or end an active one. Treatment shows a chronological activity log for the cycle (amount in grams, date and time, who recorded it), with add, edit, soft delete, a date-range filter, and infinite scroll. Planned treatments for the cycle are listed as information only. Grafik shows biomassa and that day's deaths for this pond. An empty range is the whole active cycle. The historical day and Catat puasa dadakan choose each day on the calendar. The saved value stays `YYYY-MM-DD`, the calendar day that was picked.
 - Profil: the signed-in account. Pengaturan: theme and sidebar, stored in the browser.
 
-History for BATCH 1 is loaded by `pnpm db:import` from the Pakan workbook. Re-running that command replaces BATCH 1 cycles. It does not write puasa dadakan. Ponds, feed names, fish species, cultivation methods, and the administrator account stay. BATCH 1 cycles are Nila grown with Biofloc.
-
-## Domain rules already in force
+### Domain rules already in force
 
 These are implemented, not proposals. Detail is in [GLOSSARY.md](GLOSSARY.md), [pakan-database-design.md](pakan-database-design.md), and [adr/0001-kolam-reads-are-offset-pages.md](adr/0001-kolam-reads-are-offset-pages.md).
 
@@ -61,14 +77,28 @@ These are implemented, not proposals. Detail is in [GLOSSARY.md](GLOSSARY.md), [
 - List screens use offset pages: `pageIndex`, `pageSize`, `sortId`, `sortDesc`, then `rows` and `rowCount`.
 - Grafik is the exception to paging. It loads this pond only, and only while that tab is open. An empty range is the whole active cycle. A chosen range is applied after the cycle is walked from its first day.
 
-## Decisions
+### Decisions
 
-1. The app is for any fish farm. Each farm runs its own copy. Opening the source is planned. A license has not been chosen, so the source is not open for reuse yet.
+1. The current user is our eight-pond tilapia farm. A later direction is that any fish farm runs its own copy. Opening the source is planned. A license has not been chosen, so the source is not open for reuse yet.
 2. There is one account type. No read-only role and no technician role.
 3. The day's work is added and edited in the app, including deaths and the other things the farm does. The first shape is a form. A later shape can be a list of what that farm records that day. The workbook import remains how BATCH 1 history arrived.
 4. Fish purchases and sales belong in this app. They are not built.
 5. Screen copy is Indonesian until a translation catalog exists.
 
-## Open questions
+### Open questions
 
 Which industry comes after fish, if any, is not decided. Poultry and vegetables stay candidates only.
+
+## Evidence on Hand
+
+Screenshots in [screenshots/README.md](screenshots/README.md) are Storybook fixtures, not an export of the live farm. The BATCH 1 workbook in this repository is this farm's history.
+
+There are no other farms, testimonials, yield numbers, or a license. Future work must not invent them.
+
+## Product Principles
+
+- This farm is the user. Other farms are a later direction.
+- Recording the day and reviewing the cycle have equal weight.
+- Derived figures are calculated. A blank measurement is not zero.
+- Do not claim users, harvest results, or a license the repository does not have.
+- Screen copy stays Indonesian until a translation catalog exists.
