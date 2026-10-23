@@ -158,16 +158,20 @@ function dragStyle(
 
 interface DataTableSearchProps {
   label?: string
+  className?: string
 }
 
-const DataTableSearch: FC<DataTableSearchProps> = ({ label = 'Cari' }) => {
+const DataTableSearch: FC<DataTableSearchProps> = ({
+  label = 'Cari',
+  className,
+}) => {
   const table = useTableContext()
   const id = useId()
 
   return (
     <table.Subscribe selector={(state) => state.globalFilter}>
       {(globalFilter) => (
-        <Field className="w-full max-w-sm">
+        <Field className={cn('w-full max-w-sm', className)}>
           <FieldLabel htmlFor={id} className="sr-only">
             {label}
           </FieldLabel>

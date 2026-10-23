@@ -169,14 +169,21 @@ Bibis is feed prepared ahead. `Batch.bibisLeadDays` (default 2) is the lead time
 
 Per pond it returns `requiredGrams` (0 when fasting), `fastingReason` when that is why it is 0, `preparedGrams` (already recorded), and `remainingGrams` (required minus prepared, never below 0). It also returns the day totals. `preparedButNotNeeded` is true when something was prepared and the feeding day later became a fast day.
 
+A feeding day whose calculated amount is unknown stays null on that pond. It is not stored as 0. The brand total adds only the ponds that have an amount.
+
+The Pakan page sums that to-do by feed brand. Ponds on the same brand and the same `feedingOn` add together. Two lead times stay two rows. Stock for the brand is the inventory formula below, whose only outflow is actual `FeedApplication` grams. The forecast is compared with that stock. Viewing the page does not write a movement. Prepared grams do not change stock.
+
+Status is Aman when stock covers the summed forecast, and Perlu tambah bibis when stock is short. A pond with no calculated amount is left out of that sum. There is no Data belum lengkap status and no Perlu persiapan threshold.
+
 **The user records what they did.** `BibisRecord` is one append-only row each time bibis is prepared:
 
-| Field                                | Note                                                    |
-| ------------------------------------ | ------------------------------------------------------- |
-| `batchPondId`, `feedId`, `feedingOn` | Which pond, which feed, and which feeding day it is for |
-| `quantityGrams`                      | Integer grams actually prepared                         |
-| `preparedAt`, `userId`               | When and who                                            |
-| `note`                               | Optional                                                |
+| Field                                | Note                                                                                        |
+| ------------------------------------ | ------------------------------------------------------------------------------------------- |
+| `batchPondId`, `feedId`, `feedingOn` | `batchPondId` is optional. New rows name the feed and the feeding day. Old rows keep a pond |
+| `quantityGrams`                      | Integer grams actually prepared                                                             |
+| `preparedAt`, `userId`               | When and who                                                                                |
+| `note`                               | Optional                                                                                    |
+| `clientRequestId`                    | Optional unique key. The same key does not create a second row                              |
 
 Rules:
 
@@ -196,7 +203,7 @@ current stock = sum(FeedReceipt) - sum(FeedApplication) + sum(StockOpname.adjust
 Per feed. Opening stock for a period is the same sum before the period.
 
 - `FeedReceipt`: grams in.
-- `FeedApplication`: grams out. It is the same row that records actual feed on a pond. Stock out is not typed twice.
+- `FeedApplication`: grams out. It is the same row that records actual feed on a pond. Stock out is not typed twice. A recommended amount with no actual row does not reduce stock.
 - `StockOpname`: `systemQuantityGrams` (what the system said at that moment), `physicalQuantityGrams`, and `adjustmentGrams` (`physical - system`). The system quantity is a snapshot on purpose: it keeps the count auditable even if a later receipt is recorded with an earlier time.
 
 Worked example: opening `100000`, received `50000`, applied `20000`, opname `-5000` gives `125000`. An opening count is a `StockOpname` with `systemQuantityGrams = 0`.

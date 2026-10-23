@@ -214,11 +214,17 @@ export interface BibisItem {
   batchPondId: string
   feedingOn: CalendarDate
   calculatedFeedGrams: number | null
-  /** Operational feed for the feeding day. 0 when fasting. */
-  requiredGrams: number
+  /**
+   * Operational feed for the feeding day. 0 when fasting.
+   * Null when the pond is feeding and the calculated amount cannot be known.
+   * Null is not zero.
+   */
+  requiredGrams: number | null
   preparedGrams: number
-  /** Still to prepare: required minus prepared, never below 0. */
-  remainingGrams: number
+  /** Still to prepare: required minus prepared, never below 0. Null when required is null. */
+  remainingGrams: number | null
+  /** The feeding day cannot be quantified. Fasting is complete at 0. */
+  incomplete: boolean
   /** Why the required amount is 0, when fasting made it 0. */
   fastingReason: FastingReason | null
   /** Something was prepared that is no longer needed, for example after a new override. */
@@ -229,8 +235,11 @@ export interface BibisForDay {
   prepareOn: CalendarDate
   feedingOn: CalendarDate
   items: BibisItem[]
-  totalRequiredGrams: number
-  totalRemainingGrams: number
+  /** Null when any pond is incomplete. Incomplete ponds are not added as zero. */
+  totalRequiredGrams: number | null
+  /** Null when any pond is incomplete. */
+  totalRemainingGrams: number | null
+  incomplete: boolean
 }
 
 /**
@@ -239,6 +248,7 @@ export interface BibisForDay {
  * fasting, whether from the recurring pattern or from an override. It is
  * calculated every time, so a new override changes it without any row to
  * cancel. Records the user already saved reduce what is remaining.
+ * A feeding day with no calculated amount stays null. It is not treated as 0.
  */
 export function getBibisForDay(
   prepareOn: CalendarDate,
@@ -251,32 +261,37 @@ export function getBibisForDay(
   for (const cycle of cycles) {
     const schedule = getPondFeedingSchedule(cycle.schedule, feedingOn)
     const calculatedFeedGrams = cycle.getCalculatedFeedGrams(feedingOn)
-    const requiredGrams =
-      getOperationalFeedGrams(calculatedFeedGrams, schedule) ?? 0
+    const requiredGrams = getOperationalFeedGrams(calculatedFeedGrams, schedule)
     const preparedGrams = cycle.getPreparedGrams(feedingOn)
+    const incomplete = requiredGrams === null
     items.push({
       batchPondId: cycle.batchPondId,
       feedingOn,
       calculatedFeedGrams,
       requiredGrams,
       preparedGrams,
-      remainingGrams: Math.max(requiredGrams - preparedGrams, 0),
+      remainingGrams:
+        requiredGrams === null
+          ? null
+          : Math.max(requiredGrams - preparedGrams, 0),
+      incomplete,
       fastingReason: schedule.fastingReason,
       preparedButNotNeeded: requiredGrams === 0 && preparedGrams > 0,
     })
   }
 
+  const incomplete = items.some((item) => item.incomplete)
+
   return {
     prepareOn,
     feedingOn,
     items,
-    totalRequiredGrams: items.reduce(
-      (sum, item) => sum + item.requiredGrams,
-      0,
-    ),
-    totalRemainingGrams: items.reduce(
-      (sum, item) => sum + item.remainingGrams,
-      0,
-    ),
+    totalRequiredGrams: incomplete
+      ? null
+      : items.reduce((sum, item) => sum + (item.requiredGrams ?? 0), 0),
+    totalRemainingGrams: incomplete
+      ? null
+      : items.reduce((sum, item) => sum + (item.remainingGrams ?? 0), 0),
+    incomplete,
   }
 }

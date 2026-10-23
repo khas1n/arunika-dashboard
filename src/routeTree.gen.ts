@@ -13,6 +13,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as GuestRouteRouteImport } from './routes/_guest/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedKolamRouteImport } from './routes/_authenticated/kolam'
+import { Route as AuthenticatedPakanRouteImport } from './routes/_authenticated/pakan'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as GuestLoginRouteImport } from './routes/_guest/login'
@@ -36,6 +37,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
 const AuthenticatedKolamRoute = AuthenticatedKolamRouteImport.update({
   id: '/kolam',
   path: '/kolam',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPakanRoute = AuthenticatedPakanRouteImport.update({
+  id: '/pakan',
+  path: '/pakan',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
@@ -73,6 +79,7 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/kolam': typeof AuthenticatedKolamRouteWithChildren
+  '/pakan': typeof AuthenticatedPakanRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/login': typeof GuestLoginRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
+  '/pakan': typeof AuthenticatedPakanRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/login': typeof GuestLoginRoute
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_guest': typeof GuestRouteRouteWithChildren
   '/_authenticated/kolam': typeof AuthenticatedKolamRouteWithChildren
+  '/_authenticated/pakan': typeof AuthenticatedPakanRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_guest/login': typeof GuestLoginRoute
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/kolam'
+    | '/pakan'
     | '/profile'
     | '/settings'
     | '/login'
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/pakan'
     | '/profile'
     | '/settings'
     | '/login'
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/_guest'
     | '/_authenticated/kolam'
+    | '/_authenticated/pakan'
     | '/_authenticated/profile'
     | '/_authenticated/settings'
     | '/_guest/login'
@@ -170,6 +182,13 @@ declare module '@tanstack/react-router' {
       path: '/kolam'
       fullPath: '/kolam'
       preLoaderRoute: typeof AuthenticatedKolamRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pakan': {
+      id: '/_authenticated/pakan'
+      path: '/pakan'
+      fullPath: '/pakan'
+      preLoaderRoute: typeof AuthenticatedPakanRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/profile': {
@@ -232,6 +251,7 @@ const AuthenticatedKolamRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedKolamRoute: typeof AuthenticatedKolamRouteWithChildren
+  AuthenticatedPakanRoute: typeof AuthenticatedPakanRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -239,6 +259,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedKolamRoute: AuthenticatedKolamRouteWithChildren,
+  AuthenticatedPakanRoute: AuthenticatedPakanRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,

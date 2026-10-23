@@ -64,6 +64,7 @@ import {
 import {
   formatCalendar,
   formatFcr,
+  formatFrRange,
   formatGrams,
   formatLongCalendar,
   formatQuantity,
@@ -78,7 +79,6 @@ import {
   pondDayRowId,
 } from '#/features/pakan/components/pond-log/pond-day-cell'
 import type {
-  BibisLine,
   FastingOverrideInput,
   FastingOverrideItem,
   KolamChartPoint,
@@ -103,15 +103,12 @@ import {
 } from '#/components/ui/tooltip'
 
 interface PondLogProps {
-  prepareOn: string
-  feedingOn: string
   cycle: KolamCycle | null
   chartPoints?: Array<KolamChartPoint>
   days: Array<PondDay>
   dayRowCount?: number
   dayTable?: ServerTableControls
   daysFetching?: boolean
-  bibis: Array<BibisLine>
   overrides: Array<FastingOverrideItem>
   overrideRowCount?: number
   overrideTable?: ServerTableControls
@@ -139,15 +136,12 @@ interface PondLogProps {
 }
 
 export const PondLog: FC<PondLogProps> = ({
-  prepareOn,
-  feedingOn,
   cycle,
   chartPoints,
   days,
   dayRowCount,
   dayTable,
   daysFetching = false,
-  bibis,
   overrides,
   overrideRowCount,
   overrideTable,
@@ -257,9 +251,13 @@ export const PondLog: FC<PondLogProps> = ({
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             <MetricCard
-              label="Bibis"
-              value={bibisAmount(bibis[0])}
-              detail={`Siapkan pada ${formatCalendar(prepareOn)} untuk pemberian ${formatCalendar(feedingOn)}.`}
+              label="FR"
+              value={formatFrRange(cycle.latestFrMin, cycle.latestFrMax)}
+              detail={
+                cycle.latestFrOn
+                  ? `Dari berat pada ${formatCalendar(cycle.latestFrOn)}.`
+                  : 'Belum ada berat tercatat.'
+              }
             />
             <MetricCard
               label="Total kematian"
@@ -970,13 +968,6 @@ const TodayReportForm: FC<TodayReportFormProps> = ({
   )
 }
 
-function bibisAmount(item: BibisLine | undefined): string {
-  if (!item) return '—'
-  if (item.fastingReason === 'dadakan') return 'Puasa dadakan, 0 g'
-  if (item.fastingReason === 'pola') return 'Puasa pola, 0 g'
-  return `${formatGrams(item.requiredGrams)} g`
-}
-
 interface PondFactsProps {
   cycle: KolamCycle
 }
@@ -1049,7 +1040,7 @@ const PondHeading: FC<PondHeadingProps> = ({ cycle }) => {
         {cycle ? <PondFacts cycle={cycle} /> : null}
       </div>
       <p className="text-sm text-muted-foreground">
-        Catatan harian, pakan aktual, dan bibis untuk kolam ini.
+        Catatan harian, pakan aktual, dan FR untuk kolam ini.
       </p>
     </div>
   )

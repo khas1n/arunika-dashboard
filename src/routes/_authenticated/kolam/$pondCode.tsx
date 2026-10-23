@@ -45,8 +45,7 @@ const KolamPage: FC<{ pondCode: string }> = ({ pondCode }) => {
     revokeTreatmentLog,
   } = useKolamActions(pondCode)
   const cycle = page.header.rows.at(0) ?? null
-  const bibis = page.bibis.rows.at(0)
-  if (!cycle || !bibis) throw notFound()
+  if (!cycle) throw notFound()
 
   const onTabChange = (next: PondTab) => {
     void navigate({
@@ -59,14 +58,11 @@ const KolamPage: FC<{ pondCode: string }> = ({ pondCode }) => {
 
   return (
     <PondLog
-      prepareOn={bibis.prepareOn}
-      feedingOn={bibis.feedingOn}
       cycle={cycle}
       days={page.days.rows}
       dayRowCount={page.days.rowCount}
       dayTable={page.dayTable}
       daysFetching={page.daysFetching}
-      bibis={page.bibis.rows}
       overrides={page.overrides.rows}
       overrideRowCount={page.overrides.rowCount}
       overrideTable={page.overrideTable}

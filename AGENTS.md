@@ -20,3 +20,5 @@ Arunika is a fish-farm app any farm will be able to run. Opening the source is p
 Before a substantial change, read [docs/ai-engineering.md](docs/ai-engineering.md). Pakan words are in [docs/GLOSSARY.md](docs/GLOSSARY.md). Product scope and open questions are in [docs/product.md](docs/product.md). Coding conventions that Cursor always applies are in `.cursor/rules/`.
 
 Do not print secrets, `.env` values, or the seeded administrator password.
+
+Avoid unnecessary secondary labels and descriptions. Let the layout do the explaining.

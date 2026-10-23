@@ -16,13 +16,13 @@ One paged Kolam read. The pond screen uses a separate list for each of these:
 
 - ponds (the sidebar)
 - pond header (asal bibit, volume, puasa, pakan, jenis ikan, metode budidaya, FCR) — a page of one row
-- today's bibis for that pond
+- the pond header. Bibis for the farm is on the Pakan page, not on this list
 - puasa dadakan for that pond, including ended rows. Default sort is active first, then ended. Sorting by start date or reason mixes the two. Akhiri is only on an active row.
 - daily log for that pond, sortable by every visible column, defaulting to the reporting date, newest first. Equal dates stay in stored order. A refresh keeps the sort the operator picked.
 
 The pond list has one sort: batch order A3, B3, C3, D3, A6, B6, C6, D6.
 
-The pond screen shows one tab at a time. The tabs sit beside the pond title. The active tab is the `tab` search param (`harian`, `puasa`, `treatment`, or `grafik`); reloading keeps that tab, and an unknown value falls back to Harian. An info control lists asal bibit, jumlah bibit, volume, puasa, pakan, jenis ikan, and metode budidaya. A strip above the tables shows today's bibis, total kematian for the active cycle, and FCR, and it stays on every tab. Harian is the daily log. Puasa is puasa dadakan. Treatment is the treatment activity log for this cycle. Grafik holds the biomass line and the daily death line. Catat sits in the Harian table and opens today's weight, today's deaths, today's actual feed, or a separate historical day. Catat puasa dadakan sits in the Puasa table. Catat treatment sits in the Treatment tab.
+The pond screen shows one tab at a time. The tabs sit beside the pond title. The active tab is the `tab` search param (`harian`, `puasa`, `treatment`, or `grafik`); reloading keeps that tab, and an unknown value falls back to Harian. An info control lists asal bibit, jumlah bibit, volume, puasa, pakan, jenis ikan, and metode budidaya. A strip above the tables shows FR from the latest day that has a weight band, total kematian for the active cycle, and FCR, and it stays on every tab. Harian is the daily log. Puasa is puasa dadakan. Treatment is the treatment activity log for this cycle. Grafik holds the biomass line and the daily death line. Catat sits in the Harian table and opens today's weight, today's deaths, today's actual feed, or a separate historical day. Catat puasa dadakan sits in the Puasa table. Catat treatment sits in the Treatment tab.
 
 ## Treatment
 
@@ -49,6 +49,14 @@ Creating or ending a puasa dadakan is not a list.
 ## DOC
 
 Day of culture for one cycle. Day 1 is that cycle's earliest stocking date. A later reporting date is the number of calendar days from that stocking date, plus one. A day with no record is not created, and it does not change any other day's DOC. The number stored on the row is only a unique key. The screen shows the calendar DOC.
+
+## Pakan stock
+
+The gram balance of one feed brand. It is not stored. It is `sum(FeedReceipt) - sum(FeedApplication) + sum(StockOpname.adjustmentGrams)`. `FeedApplication` is the pakan aktual saved on a pond. Recommended feed, FR, and a `BibisRecord` do not change the balance. An opname stores the system quantity at that moment and the adjustment. Old receipts are not rewritten. A repeated submit with the same `clientRequestId` does not create a second row. No opening balance is invented from old bibis rows.
+
+## Bibis forecast
+
+Feed to prepare for `today in Asia/Jakarta + bibisLeadDays` (default 2), summed by feed brand. Ponds on 781 add together. Ponds on Safir add together. A new `BibisRecord` names the feed and the feeding day, not a pond. Older rows may still name a pond. Those rows stay, and they count as prepared grams for that feed and day. They are not stock. Fasting contributes 0. A feeding pond with no calculated amount is left out of that brand's bibis total. It does not blank the other ponds, and it is not stored as zero. The Pakan screen has two compact sections, side by side on a wide screen. Pakan shows the grams on hand and a short bar of what is left after the feeding day. Bibis shows the grams left after that day, the percent, and the status. Tambah on that row records preparation. Riwayat is a card under both. Its page, search, sort, and filters are on the `/pakan` URL and come from the server. Neither section has a feed filter. The feeding day is not listed. It is stored when bibis is prepared. Status is Aman when stock covers the summed forecast, and Perlu tambah bibis when it does not. There is no Data belum lengkap status and no Perlu persiapan status.
 
 ## FR
 

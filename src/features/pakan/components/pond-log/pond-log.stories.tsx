@@ -24,6 +24,9 @@ const cycles = [
     todayWeightGrams: null,
     todayDeaths: null,
     todayFeedGrams: null,
+    latestFrMin: 0.04,
+    latestFrMax: 0.05,
+    latestFrOn: '2026-10-02',
   },
   {
     id: 'a6',
@@ -42,6 +45,9 @@ const cycles = [
     todayWeightGrams: null,
     todayDeaths: null,
     todayFeedGrams: null,
+    latestFrMin: 0.04,
+    latestFrMax: 0.05,
+    latestFrOn: '2026-10-02',
   },
 ] satisfies Array<KolamCycle>
 
@@ -82,21 +88,8 @@ const meta = {
     ),
   ],
   args: {
-    prepareOn: '2026-10-06',
-    feedingOn: '2026-10-08',
     cycle: cycles[0],
     days: [day, fastingDay],
-    bibis: [
-      {
-        batchPondId: 'a3',
-        pondCode: 'A3',
-        prepareOn: '2026-10-06',
-        feedingOn: '2026-10-08',
-        requiredGrams: 1000,
-        remainingGrams: 1000,
-        fastingReason: null,
-      },
-    ],
     overrides: [
       {
         id: 'override-1',
@@ -162,6 +155,14 @@ const meta = {
 
 export default meta
 type Story = StoryObj<typeof meta>
+
+export const FeedingRate: Story = {
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText('FR')).toBeVisible()
+    await expect(canvas.getByText('4% – 5%')).toBeVisible()
+    await expect(canvas.queryByText('Bibis')).not.toBeInTheDocument()
+  },
+}
 
 export const TreatmentTab: Story = {
   args: {
@@ -481,7 +482,6 @@ export const Empty: Story = {
     cycle: null,
     chartPoints: [],
     days: [],
-    bibis: [],
     overrides: [],
     treatments: [],
     plannedTreatments: [],

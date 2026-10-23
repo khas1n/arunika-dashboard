@@ -357,38 +357,40 @@ model MortalityEvent {
 }
 
 model BibisRecord {
-  id            String   @id @default(cuid())
-  batchPondId   String
-  feedId        String
-  feedingOn     DateTime @db.Date
-  quantityGrams Int
-  preparedAt    DateTime
-  userId        String
-  note          String?
-  createdAt     DateTime @default(now())
+  id              String    @id @default(cuid())
+  batchPondId     String?
+  feedId          String
+  feedingOn       DateTime  @db.Date
+  quantityGrams   Int
+  preparedAt      DateTime
+  userId          String
+  note            String?
+  clientRequestId String?   @unique
+  createdAt       DateTime  @default(now())
 
-  batchPond BatchPond @relation(fields: [batchPondId], references: [id])
-  feed      Feed      @relation(fields: [feedId], references: [id])
-  user      User      @relation(fields: [userId], references: [id])
+  batchPond BatchPond? @relation(fields: [batchPondId], references: [id])
+  feed      Feed       @relation(fields: [feedId], references: [id])
+  user      User       @relation(fields: [userId], references: [id])
 
   feedApplications FeedApplication[]
 
   @@index([batchPondId, feedingOn])
-  @@index([feedId])
+  @@index([feedId, feedingOn])
   @@index([preparedAt])
   @@index([userId])
   @@map("bibis_record")
 }
 
 model FeedReceipt {
-  id            String   @id @default(cuid())
-  feedId        String
-  batchId       String?
-  quantityGrams Int
-  occurredAt    DateTime
-  userId        String
-  note          String?
-  createdAt     DateTime @default(now())
+  id              String    @id @default(cuid())
+  feedId          String
+  batchId         String?
+  quantityGrams   Int
+  occurredAt      DateTime
+  userId          String
+  note            String?
+  clientRequestId String?   @unique
+  createdAt       DateTime  @default(now())
 
   feed  Feed   @relation(fields: [feedId], references: [id])
   batch Batch? @relation(fields: [batchId], references: [id])
@@ -401,15 +403,16 @@ model FeedReceipt {
 }
 
 model FeedApplication {
-  id            String   @id @default(cuid())
-  batchPondId   String
-  feedId        String
-  bibisRecordId String?
-  quantityGrams Int
-  occurredAt    DateTime
-  userId        String
-  note          String?
-  createdAt     DateTime @default(now())
+  id              String    @id @default(cuid())
+  batchPondId     String
+  feedId          String
+  bibisRecordId   String?
+  quantityGrams   Int
+  occurredAt      DateTime
+  userId          String
+  note            String?
+  clientRequestId String?   @unique
+  createdAt       DateTime  @default(now())
 
   batchPond   BatchPond    @relation(fields: [batchPondId], references: [id])
   feed        Feed         @relation(fields: [feedId], references: [id])
@@ -424,7 +427,7 @@ model FeedApplication {
 }
 
 model StockOpname {
-  id                    String   @id @default(cuid())
+  id                    String    @id @default(cuid())
   feedId                String
   systemQuantityGrams   Int
   physicalQuantityGrams Int
@@ -432,7 +435,8 @@ model StockOpname {
   occurredAt            DateTime
   userId                String
   note                  String?
-  createdAt             DateTime @default(now())
+  clientRequestId       String?   @unique
+  createdAt             DateTime  @default(now())
 
   feed Feed @relation(fields: [feedId], references: [id])
   user User @relation(fields: [userId], references: [id])

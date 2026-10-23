@@ -13,6 +13,7 @@ interface AppDialogProps {
   onOpenChange: (open: boolean) => void
   title: string
   description?: string
+  className?: string
   children: ReactNode
 }
 
@@ -21,11 +22,12 @@ export const AppDialog: FC<AppDialogProps> = ({
   onOpenChange,
   title,
   description,
+  className,
   children,
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className={className}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription className={cn(!description && 'sr-only')}>

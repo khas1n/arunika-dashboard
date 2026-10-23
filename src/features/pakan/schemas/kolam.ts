@@ -269,6 +269,10 @@ export const kolamCycleSchema = z.object({
   todayWeightGrams: z.number().nullable(),
   todayDeaths: z.number().int().nullable(),
   todayFeedGrams: z.number().int().nullable(),
+  /** FR from the latest day that has a weight band. Fractions, shown as percents. */
+  latestFrMin: z.number().nullable(),
+  latestFrMax: z.number().nullable(),
+  latestFrOn: calendarDateSchema.nullable(),
 })
 
 export const bibisLineSchema = z.object({
@@ -276,8 +280,8 @@ export const bibisLineSchema = z.object({
   pondCode: z.string(),
   prepareOn: calendarDateSchema,
   feedingOn: calendarDateSchema,
-  requiredGrams: z.number(),
-  remainingGrams: z.number(),
+  requiredGrams: z.number().nullable(),
+  remainingGrams: z.number().nullable(),
   fastingReason: fastingLabelSchema,
 })
 

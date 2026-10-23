@@ -30,6 +30,16 @@ export function formatPercent(value: number | null): string {
   return percent.format(value)
 }
 
+/** FR min and max as percents. One number when the band is a single rate. */
+export function formatFrRange(
+  frMin: number | null,
+  frMax: number | null,
+): string {
+  if (frMin == null || frMax == null) return '—'
+  if (frMin === frMax) return formatPercent(frMin)
+  return `${formatPercent(frMin)} – ${formatPercent(frMax)}`
+}
+
 export function formatCalendar(value: string | null): string {
   if (!value) return '—'
   return calendar.format(new Date(`${value}T00:00:00.000Z`))

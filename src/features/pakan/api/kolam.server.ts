@@ -204,6 +204,18 @@ function toCycle(cycle: BuiltCycle): KolamCycle {
     todayWeightGrams: cycle.todayWeightGrams,
     todayDeaths: cycle.todayDeaths,
     todayFeedGrams: cycle.todayFeedGrams,
+    ...latestFeedingRate(cycle.days),
+  }
+}
+
+function latestFeedingRate(days: Array<{ date: string | null; frMin: number | null; frMax: number | null }>) {
+  const latest = [...days]
+    .reverse()
+    .find((day) => day.frMin != null && day.frMax != null)
+  return {
+    latestFrMin: latest?.frMin ?? null,
+    latestFrMax: latest?.frMax ?? null,
+    latestFrOn: latest?.date ?? null,
   }
 }
 

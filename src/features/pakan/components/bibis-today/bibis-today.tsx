@@ -14,6 +14,7 @@ interface BibisTodayProps {
 function bibisText(item: BibisLine): string {
   if (item.fastingReason === 'dadakan') return 'Puasa dadakan, 0 g'
   if (item.fastingReason === 'pola') return 'Puasa pola, 0 g'
+  if (item.requiredGrams == null) return 'Data belum lengkap'
   return `${formatGrams(item.requiredGrams)} g`
 }
 

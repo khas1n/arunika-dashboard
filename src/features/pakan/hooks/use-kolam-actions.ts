@@ -12,6 +12,7 @@ import {
 } from '#/features/pakan/api/kolam.functions'
 import { kolamQueryKey } from '#/features/pakan/api/kolam.queries'
 import { feedsQueryKey } from '#/features/pakan/api/feed.queries'
+import { inventoryQueryKey } from '#/features/pakan/api/inventory.queries'
 import {
   cultureDay,
   todayInJakarta,
@@ -186,6 +187,7 @@ export function useKolamActions(pondCode: string) {
         queryKey: [...kolamQueryKey, 'header'],
       }),
       queryClient.invalidateQueries({ queryKey: feedsQueryKey }),
+      queryClient.invalidateQueries({ queryKey: inventoryQueryKey }),
     ])
 
   const upsert = useOptimisticMutation({

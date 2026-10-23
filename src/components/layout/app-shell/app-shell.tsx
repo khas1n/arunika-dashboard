@@ -23,9 +23,9 @@ export const AppShell: FC<AppShellProps> = ({
   return (
     <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
       <AppSidebar ponds={ponds} />
-      <SidebarInset className="min-w-0">
+      <SidebarInset className="h-svh min-w-0 overflow-hidden">
         <AppHeader user={user} onSignOut={onSignOut} />
-        <div className="flex min-w-0 flex-1 flex-col gap-6 p-4 md:p-6">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-6 overflow-auto p-4 md:p-6">
           {children}
         </div>
       </SidebarInset>

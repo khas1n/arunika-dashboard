@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
-import { Home, Settings, UserRound, Waves } from 'lucide-react'
+import { Home, Package, Settings, UserRound, Waves } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -51,6 +51,18 @@ export const AppSidebar: FC<AppSidebarProps> = ({ ponds = [] }) => {
                   <Link to={items[0].to}>
                     <Home />
                     <span>Beranda</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === '/pakan'}
+                  tooltip="Pakan"
+                >
+                  <Link to="/pakan">
+                    <Package />
+                    <span>Pakan</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
